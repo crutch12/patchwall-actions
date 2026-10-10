@@ -2,20 +2,29 @@ package com.criit.patchwallactions;
 
 import android.Manifest;
 import android.accessibilityservice.AccessibilityService;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Кнопка Xiaomi (код 192) до приложений не доходит: прошивка сама её обрабатывает
@@ -30,6 +39,8 @@ import java.io.InputStreamReader;
 public class MiKeyService extends AccessibilityService {
 
     static final String PATCHWALL = "com.mitv.tvhome.atv";
+    // pid в формате brief: "D/Tag(  881): ..."
+    private static final Pattern PID = Pattern.compile("\\(\\s*(\\d+)\\)");
     private static final long DOUBLE_PRESS_MS = 400;
     // если потеряли строку про отпускание, через столько считаем кнопку отпущенной
     private static final long STUCK_MS = 5000;
@@ -71,6 +82,8 @@ public class MiKeyService extends AccessibilityService {
     private Process logcat;
     // чёрный слой поверх экрана для уровней ниже нуля
     private View dimView;
+    private TextView sleepBanner;
+    private ValueAnimator sleepFade;
 
     @Override
     protected void onServiceConnected() {
@@ -85,19 +98,48 @@ public class MiKeyService extends AccessibilityService {
 
     // --- журнал ---
 
+    // журнал читаем только у system_server: logd фильтрует по pid сам, и TV не грузится разбором
+    // всего журнала. pid узнаём по первой же строке с нашими тегами, потом перезапускаем logcat
     private void startReader() {
         Thread reader = new Thread(() -> {
             try {
-                logcat = Runtime.getRuntime().exec(new String[]{
-                        "logcat", "-T", "1", "-s", "MiTVWindowPolicyInjector:D", "MiTVMiKeyHandler:D"});
-                BufferedReader in = new BufferedReader(new InputStreamReader(logcat.getInputStream()));
-                String line;
-                while ((line = in.readLine()) != null) {
-                    if (line.contains("handleAction192")) {
-                        main.post(this::onKeyLine);
-                    } else if (line.contains("onLongPress:192")) {
-                        main.post(this::onLongPress);
+                String pid = null;
+                while (true) {
+                    List<String> args = new ArrayList<>(Arrays.asList("logcat", "-v", "brief", "-T", "1"));
+                    if (pid != null) {
+                        args.add("--pid=" + pid);
                     }
+                    args.addAll(Arrays.asList("-s", "MiTVWindowPolicyInjector:D", "MiTVMiKeyHandler:D"));
+                    logcat = Runtime.getRuntime().exec(args.toArray(new String[0]));
+                    BufferedReader in = new BufferedReader(new InputStreamReader(logcat.getInputStream()));
+                    boolean first = true;
+                    String line;
+                    String found = null;
+                    while ((line = in.readLine()) != null) {
+                        if (pid == null) {
+                            Matcher m = PID.matcher(line);
+                            if (m.find()) {
+                                found = m.group(1);
+                                break;
+                            }
+                            continue;
+                        }
+                        // первая строка от -T 1 это старое событие, его пропускаем
+                        if (first) {
+                            first = false;
+                            continue;
+                        }
+                        if (line.contains("handleAction192")) {
+                            main.post(this::onKeyLine);
+                        } else if (line.contains("onLongPress:192")) {
+                            main.post(this::onLongPress);
+                        }
+                    }
+                    logcat.destroy();
+                    if (found == null) {
+                        return;
+                    }
+                    pid = found;
                 }
             } catch (Exception ignored) {
                 // без READ_LOGS или если процесс убили, просто перестаём слушать
@@ -139,6 +181,12 @@ public class MiKeyService extends AccessibilityService {
     }
 
     private void onTap() {
+        // в последнюю минуту таймера кнопка откладывает сон
+        if (SleepTimer.warning(this)) {
+            cancelPending();
+            SleepTimer.add(this, SleepTimer.STEP);
+            return;
+        }
         // нажатие при открытом меню просто закрывает его
         if (MenuActivity.current != null) {
             cancelPending();
@@ -221,6 +269,7 @@ public class MiKeyService extends AccessibilityService {
             return;
         }
         foregroundApp = pkg;
+        Apps.onForeground(this, pkg);
     }
 
     // жмём "назад", только когда сверху действительно PatchWall.
@@ -248,6 +297,61 @@ public class MiKeyService extends AccessibilityService {
         MiKeyService service = instance;
         if (service != null) {
             service.main.post(() -> service.showDim(percent));
+        }
+    }
+
+    // последняя минута таймера: баннер внизу и плавное затемнение до конца
+    static void showSleepWarning(long durationMs) {
+        MiKeyService service = instance;
+        if (service != null) {
+            service.main.post(() -> service.startSleepWarning(durationMs));
+        }
+    }
+
+    static void hideSleepWarning() {
+        MiKeyService service = instance;
+        if (service != null) {
+            service.main.post(service::stopSleepWarning);
+        }
+    }
+
+    private void startSleepWarning(long durationMs) {
+        stopSleepWarning();
+        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+        float d = getResources().getDisplayMetrics().density;
+        sleepBanner = new TextView(this);
+        sleepBanner.setText("Сон через минуту. Нажмите кнопку Xiaomi, чтобы отложить на 15 минут");
+        sleepBanner.setTextColor(Color.WHITE);
+        sleepBanner.setTextSize(16);
+        sleepBanner.setPadding((int) (24 * d), (int) (14 * d), (int) (24 * d), (int) (14 * d));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(0xF02C2C2E);
+        bg.setCornerRadius(18 * d);
+        sleepBanner.setBackground(bg);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT);
+        lp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        lp.y = (int) (48 * d);
+        wm.addView(sleepBanner, lp);
+
+        sleepFade = ValueAnimator.ofInt(Backlight.dim(this), Backlight.MIN * -1);
+        sleepFade.setDuration(durationMs);
+        sleepFade.addUpdateListener(a -> showDim((int) a.getAnimatedValue()));
+        sleepFade.start();
+    }
+
+    private void stopSleepWarning() {
+        if (sleepFade != null) {
+            sleepFade.cancel();
+            sleepFade = null;
+            showDim(Backlight.dim(this));
+        }
+        if (sleepBanner != null) {
+            ((WindowManager) getSystemService(WINDOW_SERVICE)).removeView(sleepBanner);
+            sleepBanner = null;
         }
     }
 
@@ -291,6 +395,7 @@ public class MiKeyService extends AccessibilityService {
             instance = null;
         }
         cancelPending();
+        stopSleepWarning();
         showDim(0);
         main.removeCallbacks(closePatchWall);
         main.removeCallbacks(menuFallback);

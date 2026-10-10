@@ -17,11 +17,11 @@ final class Actions {
     static final String HOLD_SOURCE = "source";
 
     static final String[] SINGLE_VALUES = {SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT, SINGLE_MENU};
-    static final String[] SINGLE_LABELS = {"Подсветка вкл/выкл", "Таймер сна +30 мин", "Сцена Ночь", "Открыть меню"};
+    static final String[] SINGLE_LABELS = {"Подсветка вкл/выкл", "Таймер сна +15 мин", "Сцена Ночь", "Открыть меню"};
 
     static final String[] HOLD_VALUES = {HOLD_SOURCE, SINGLE_MENU, SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT};
     static final String[] HOLD_LABELS = {"Переключить источник", "Открыть меню", "Подсветка вкл/выкл",
-            "Таймер сна +30 мин", "Сцена Ночь"};
+            "Таймер сна +15 мин", "Сцена Ночь"};
 
     private static final int NIGHT_BACKLIGHT = 20;
     private static final int NIGHT_TIMER = 60;
@@ -66,7 +66,7 @@ final class Actions {
                 Inputs.cycle(ctx);
                 return false;
             case SINGLE_TIMER:
-                SleepTimer.add(ctx, 30);
+                SleepTimer.add(ctx, SleepTimer.STEP);
                 return false;
             case SINGLE_NIGHT:
                 toggleNight(ctx);
@@ -102,6 +102,50 @@ final class Actions {
         Backlight.set(ctx, NIGHT_BACKLIGHT);
         TvSettings.put(ctx, TvSettings.BLUE_LIGHT, 1);
         SleepTimer.set(ctx, NIGHT_TIMER);
+    }
+
+    // --- сцены ---
+
+    static final String SCENE_CINEMA = "cinema";
+    static final String SCENE_GAME = "game";
+    static final String SCENE_MY = "my";
+
+    // картинка, звук, уровень подсветки (ниже нуля затемнение), синий свет
+    static void applyScene(Context ctx, String scene) {
+        switch (scene) {
+            case SCENE_CINEMA:
+                applyScene(ctx, 9, 1, 60, 0);
+                break;
+            case SCENE_GAME:
+                applyScene(ctx, 7, 3, 80, 0);
+                break;
+            default:
+                SharedPreferences p = prefs(ctx);
+                applyScene(ctx, p.getInt("myPicture", 7), p.getInt("mySound", 0),
+                        p.getInt("myLevel", 50), p.getInt("myBlue", 0));
+                break;
+        }
+        prefs(ctx).edit().putBoolean("night", false).apply();
+    }
+
+    private static void applyScene(Context ctx, int picture, int sound, int level, int blue) {
+        TvSettings.put(ctx, TvSettings.PICTURE_MODE, picture);
+        TvSettings.put(ctx, TvSettings.SOUND_STYLE, sound);
+        TvSettings.put(ctx, TvSettings.BLUE_LIGHT, blue);
+        Backlight.set(ctx, level);
+    }
+
+    static boolean mySceneSaved(Context ctx) {
+        return prefs(ctx).contains("myLevel");
+    }
+
+    static void saveMyScene(Context ctx) {
+        prefs(ctx).edit()
+                .putInt("myPicture", TvSettings.get(ctx, TvSettings.PICTURE_MODE, 7))
+                .putInt("mySound", TvSettings.get(ctx, TvSettings.SOUND_STYLE, 0))
+                .putInt("myLevel", Backlight.get(ctx))
+                .putInt("myBlue", TvSettings.get(ctx, TvSettings.BLUE_LIGHT, 0))
+                .apply();
     }
 
     static boolean tileVisible(Context ctx, String id) {

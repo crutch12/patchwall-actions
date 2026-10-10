@@ -18,6 +18,7 @@ import android.media.tv.TvInputInfo;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -31,8 +32,11 @@ import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.media.session.MediaController;
+import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,16 +124,30 @@ public class MenuActivity extends Activity {
 
         buildBrightness();
         buildInputs();
+        buildMedia();
+        buildRecents();
         buildControls();
         buildFooter();
         wireFocus();
 
+        // пунктов больше, чем влезает по высоте: панель прокручивается за фокусом.
+        // Короткая панель остаётся по центру, увеличенные плитки не обрезаются
+        panel.setGravity(Gravity.CENTER_VERTICAL);
+        panel.setPadding(dp(10), 0, dp(10), 0);
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setVerticalScrollBarEnabled(false);
+        scroll.setClipChildren(false);
+        scroll.setClipToPadding(false);
+        scroll.setPadding(0, dp(28), 0, dp(28));
+        scroll.addView(panel);
+
         FrameLayout root = new FrameLayout(this);
         root.setClipChildren(false);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(560), ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER_VERTICAL | Gravity.END);
-        lp.rightMargin = dp(48);
-        root.addView(panel, lp);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(580), ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.END);
+        lp.rightMargin = dp(38);
+        root.addView(scroll, lp);
         setContentView(root);
 
         bindAll();
@@ -254,6 +272,89 @@ public class MenuActivity extends Activity {
         return t.view;
     }
 
+    // что сейчас играет: только если видна медиасессия (нужен доступ к уведомлениям)
+    private void buildMedia() {
+        if (!Actions.tileVisible(this, "media")) {
+            return;
+        }
+        MediaController session = Media.session(this);
+        if (session == null) {
+            return;
+        }
+        View label = caption("Сейчас играет: " + Media.title(this, session));
+        panel.addView(label);
+        fadeOnPreview.add(label);
+        LinearLayout row = row(dp(64));
+        List<View> cells = new ArrayList<>();
+
+        Tile prev = new Tile("Назад");
+        prev.view.setOnClickListener(v -> session.getTransportControls().skipToPrevious());
+        Tile play = new Tile(Media.playing(session) ? "Пауза" : "Играть");
+        play.view.setOnClickListener(v -> {
+            if (Media.playing(session)) {
+                session.getTransportControls().pause();
+                play.title.setText("Играть");
+            } else {
+                session.getTransportControls().play();
+                play.title.setText("Пауза");
+            }
+        });
+        Tile next = new Tile("Вперёд");
+        next.view.setOnClickListener(v -> session.getTransportControls().skipToNext());
+        for (Tile t : new Tile[]{prev, play, next}) {
+            t.view.setOnLongClickListener(v -> {
+                Apps.open(this, session.getPackageName());
+                finish();
+                return true;
+            });
+            addCell(row, t.view);
+            cells.add(t.view);
+        }
+        grid.add(cells);
+    }
+
+    // недавние приложения: ОК открывает, долгий ОК закрывает
+    private void buildRecents() {
+        if (!Actions.tileVisible(this, "recent")) {
+            return;
+        }
+        List<String> recent = Apps.recent(this);
+        if (recent.isEmpty()) {
+            return;
+        }
+        View label = caption("Недавние");
+        panel.addView(label);
+        fadeOnPreview.add(label);
+        LinearLayout row = row(dp(72));
+        List<View> cells = new ArrayList<>();
+        for (int i = 0; i < Math.min(COLUMNS, recent.size()); i++) {
+            String pkg = recent.get(i);
+            Tile t = new Tile(Apps.label(this, pkg));
+            t.title.setEllipsize(TextUtils.TruncateAt.END);
+            t.bind(pkg.equals(MiKeyService.foregroundApp) ? "Открыто" : "", TILE);
+            t.view.setOnClickListener(v -> {
+                Apps.open(this, pkg);
+                finish();
+            });
+            t.view.setOnLongClickListener(v -> {
+                boolean current = pkg.equals(MiKeyService.foregroundApp);
+                Apps.close(this, pkg);
+                if (current) {
+                    finish();
+                } else {
+                    t.bind("Закрыто", TILE);
+                }
+                return true;
+            });
+            addCell(row, t.view);
+            cells.add(t.view);
+        }
+        for (int i = cells.size(); i < COLUMNS; i++) {
+            addCell(row, new View(this));
+        }
+        grid.add(cells);
+    }
+
     private void buildControls() {
         View label = caption("Управление");
         panel.addView(label);
@@ -327,6 +428,42 @@ public class MenuActivity extends Activity {
                     Actions.action(Settings.ACTION_DISPLAY_SETTINGS)));
             tiles.add(blueTile);
         }
+        if (Actions.tileVisible(this, "cinema")) {
+            tiles.add(sceneTile("Кино", Actions.SCENE_CINEMA));
+        }
+        if (Actions.tileVisible(this, "game")) {
+            tiles.add(sceneTile("Игра", Actions.SCENE_GAME));
+        }
+        if (Actions.tileVisible(this, "myscene") && Actions.mySceneSaved(this)) {
+            tiles.add(sceneTile("Моя сцена", Actions.SCENE_MY));
+        }
+        String currentApp = MiKeyService.foregroundApp;
+        boolean hasApp = currentApp != null && Apps.recent(this).contains(currentApp);
+        if (Actions.tileVisible(this, "closeapp") && hasApp) {
+            Tile close = new Tile("Закрыть приложение");
+            close.bind(Apps.label(this, currentApp), TILE);
+            close.view.setOnClickListener(v -> {
+                Apps.close(this, currentApp);
+                finish();
+            });
+            close.view.setOnLongClickListener(v -> openSystem(
+                    new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + currentApp))));
+            tiles.add(close);
+        }
+        if (Actions.tileVisible(this, "memory")) {
+            Tile memory = new Tile("Очистить память");
+            memory.bind("Свободно " + Apps.availMb(this) + " МБ", TILE);
+            memory.view.setOnClickListener(v -> {
+                long before = Apps.availMb(this);
+                Apps.clearMemory(this);
+                memory.bind("Чистим...", TILE);
+                // память освобождается не сразу
+                handler.postDelayed(() -> memory.bind(
+                        "Освобождено " + Math.max(Apps.availMb(this) - before, 0) + " МБ", TILE), 1500);
+            });
+            memory.view.setOnLongClickListener(v -> openSystem(Actions.action(Settings.ACTION_APPLICATION_SETTINGS)));
+            tiles.add(memory);
+        }
         Tile settings = new Tile("Настройки");
         settings.bind("", TILE);
         settings.view.setOnClickListener(v -> {
@@ -351,10 +488,24 @@ public class MenuActivity extends Activity {
         }
     }
 
+    private Tile sceneTile(String title, String scene) {
+        Tile t = new Tile(title);
+        t.view.setOnClickListener(v -> {
+            if (requireAccess()) {
+                Actions.applyScene(this, scene);
+                toast("Сцена " + title);
+            }
+        });
+        t.view.setOnLongClickListener(v -> openSystem(
+                Actions.action("com.mitv.settings.PICTURE_SETTINGS"),
+                Actions.action(Settings.ACTION_DISPLAY_SETTINGS)));
+        return t;
+    }
+
     private void buildFooter() {
         TextView hint = new TextView(this);
         hint.setText("Кнопка Xiaomi: " + Actions.singleLabel(this).toLowerCase()
-                + "\nДолгий ОК на пункте открывает его настройки");
+                + "\nДолгий ОК открывает настройки пункта, а на недавнем приложении закрывает его");
         hint.setTextColor(GRAY_TEXT);
         hint.setTextSize(13);
         hint.setPadding(dp(6), dp(16), 0, 0);

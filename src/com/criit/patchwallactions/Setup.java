@@ -30,6 +30,8 @@ final class Setup {
             adb.shell("pm grant " + pkg + " android.permission.ACCESS_FINE_LOCATION");
             adb.shell("dumpsys deviceidle whitelist +" + pkg);
             adb.shell("cmd appops set " + pkg + " RUN_ANY_IN_BACKGROUND allow");
+            // доступ к уведомлениям только ради названия трека в медиа-панели
+            adb.shell("cmd notification allow_listener " + new ComponentName(ctx, MediaListener.class).flattenToString());
 
             // READ_LOGS процесс получает только при запуске, поэтому перезапускаем приложение
             // и перевключаем службу. Делает это отдельный процесс на TV: наш при этом умрёт.
