@@ -16,6 +16,7 @@ import android.os.PowerManager;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -63,6 +64,7 @@ public class SettingsActivity extends Activity {
 
         buildAccess();
         buildSinglePress();
+        buildBacklightPreset();
         buildTiles();
 
         ScrollView scroll = new ScrollView(this);
@@ -106,6 +108,71 @@ public class SettingsActivity extends Activity {
             });
         }
         list.addView(text("Двойное нажатие и удержание всегда открывают меню, повторное нажатие закрывает его", 13, GRAY_TEXT));
+    }
+
+    // --- уровни подсветки для кнопки ---
+
+    private void buildBacklightPreset() {
+        list.addView(section("Подсветка по кнопке"));
+        Row low = row("Нижний уровень");
+        Row high = row("Верхний уровень");
+        // ОК листает по кругу, стрелки влево/вправо двигают на шаг
+        presetRow(low, true);
+        presetRow(high, false);
+        refreshers.add(() -> {
+            int l = Backlight.low(this);
+            int h = Backlight.high(this);
+            low.status(l == 0 ? "0, экран выкл" : String.valueOf(l), Color.WHITE);
+            high.status(h == Backlight.LAST ? "Последний" : String.valueOf(h), Color.WHITE);
+        });
+        list.addView(text("Кнопка переключает между этими уровнями. Последний это уровень, который был до переключения вниз", 13, GRAY_TEXT));
+    }
+
+    private void presetRow(Row row, boolean isLow) {
+        row.view.setOnClickListener(v -> stepPreset(isLow, 1, true));
+        row.view.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) {
+                return false;
+            }
+            if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                stepPreset(isLow, 1, false);
+                return true;
+            }
+            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+                stepPreset(isLow, -1, false);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    // нижний: 0..100, верхний: последний, 10..100. Шаг 10
+    private void stepPreset(boolean isLow, int dir, boolean wrap) {
+        int low = Backlight.low(this);
+        int high = Backlight.high(this);
+        int min = isLow ? 0 : Backlight.LAST;
+        int value = isLow ? low : high;
+        int next;
+        if (!isLow && value == Backlight.LAST) {
+            next = dir > 0 ? 10 : (wrap ? 100 : Backlight.LAST);
+        } else {
+            next = value + dir * 10;
+            if (!isLow && next < 10) {
+                next = Backlight.LAST;
+            }
+        }
+        if (next > 100) {
+            next = wrap ? min : 100;
+        }
+        if (next < min) {
+            next = wrap ? 100 : min;
+        }
+        if (isLow) {
+            Backlight.setPreset(this, next, high);
+        } else {
+            Backlight.setPreset(this, low, next);
+        }
+        refreshAll();
     }
 
     // --- доступы ---

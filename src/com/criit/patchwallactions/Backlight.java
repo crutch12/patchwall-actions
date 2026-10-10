@@ -24,27 +24,58 @@ final class Backlight {
         return Settings.Global.getInt(ctx.getContentResolver(), KEY, 50);
     }
 
+    // "последний" уровень для верхнего пресета
+    static final int LAST = -1;
+
     static void set(Context ctx, int value) {
         if (!canWrite(ctx)) {
             return;
         }
         Settings.Global.putInt(ctx.getContentResolver(), KEY, value);
-        if (value > 0) {
-            prefs(ctx).edit().putInt("lastLevel", value).apply();
-        }
+        rememberLast(ctx, value);
     }
 
-    // последний ненулевой уровень <-> 0
+    static int low(Context ctx) {
+        return prefs(ctx).getInt("low", 0);
+    }
+
+    static int high(Context ctx) {
+        return prefs(ctx).getInt("high", LAST);
+    }
+
+    static void setPreset(Context ctx, int low, int high) {
+        prefs(ctx).edit().putInt("low", low).putInt("high", high).apply();
+    }
+
+    static int lastLevel(Context ctx) {
+        return prefs(ctx).getInt("lastLevel", 50);
+    }
+
+    // нижний пресет <-> верхний (по умолчанию 0 <-> последний уровень)
     static void toggle(Context ctx) {
         if (!canWrite(ctx)) {
             return;
         }
         int cur = get(ctx);
-        if (cur > 0) {
-            prefs(ctx).edit().putInt("lastLevel", cur).apply();
-            Settings.Global.putInt(ctx.getContentResolver(), KEY, 0);
-        } else {
-            set(ctx, prefs(ctx).getInt("lastLevel", 50));
+        int low = low(ctx);
+        if (cur != low) {
+            rememberLast(ctx, cur);
+            Settings.Global.putInt(ctx.getContentResolver(), KEY, low);
+            return;
+        }
+        int high = high(ctx);
+        int target = high == LAST ? lastLevel(ctx) : high;
+        // если верхний совпал с нижним, переключать некуда, берём последний
+        if (target == low) {
+            target = lastLevel(ctx);
+        }
+        Settings.Global.putInt(ctx.getContentResolver(), KEY, target);
+    }
+
+    // нижний пресет не считается "последним", иначе вернуться было бы некуда
+    private static void rememberLast(Context ctx, int value) {
+        if (value > 0 && value != low(ctx)) {
+            prefs(ctx).edit().putInt("lastLevel", value).apply();
         }
     }
 

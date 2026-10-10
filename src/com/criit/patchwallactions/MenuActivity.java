@@ -398,7 +398,7 @@ public class MenuActivity extends Activity {
     // --- состояние ---
 
     private void bindAll() {
-        int last = getSharedPreferences("backlight", MODE_PRIVATE).getInt("lastLevel", 50);
+        int last = Backlight.lastLevel(this);
         slider.setValue(Backlight.get(this), last);
         if (pictureTile != null) {
             pictureTile.bind(TvSettings.label(TvSettings.PICTURE_VALUES, TvSettings.PICTURE_LABELS,
