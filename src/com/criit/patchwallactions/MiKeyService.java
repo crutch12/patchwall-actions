@@ -4,9 +4,13 @@ import android.Manifest;
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.view.View;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -65,11 +69,14 @@ public class MiKeyService extends AccessibilityService {
     private boolean patchWallCounted;
 
     private Process logcat;
+    // чёрный слой поверх экрана для уровней ниже нуля
+    private View dimView;
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
         instance = this;
+        showDim(Backlight.dim(this));
         logsAvailable = checkSelfPermission(Manifest.permission.READ_LOGS) == PackageManager.PERMISSION_GRANTED;
         if (logsAvailable) {
             startReader();
@@ -236,6 +243,39 @@ public class MiKeyService extends AccessibilityService {
         }
     }
 
+    // затемнение: 0 убирает слой, 1..80 это процент черноты
+    static void applyDim(int percent) {
+        MiKeyService service = instance;
+        if (service != null) {
+            service.main.post(() -> service.showDim(percent));
+        }
+    }
+
+    private void showDim(int percent) {
+        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+        if (percent <= 0) {
+            if (dimView != null) {
+                wm.removeView(dimView);
+                dimView = null;
+            }
+            return;
+        }
+        if (dimView == null) {
+            dimView = new View(this);
+            dimView.setBackgroundColor(Color.BLACK);
+            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                            | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                            | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                    PixelFormat.TRANSLUCENT);
+            wm.addView(dimView, lp);
+        }
+        dimView.setAlpha(percent / 100f);
+    }
+
     // для таймера сна: "заблокировать экран" на TV уводит его в сон
     static boolean sleepNow() {
         return instance != null && instance.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN);
@@ -251,6 +291,7 @@ public class MiKeyService extends AccessibilityService {
             instance = null;
         }
         cancelPending();
+        showDim(0);
         main.removeCallbacks(closePatchWall);
         main.removeCallbacks(menuFallback);
         if (logcat != null) {

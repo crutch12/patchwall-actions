@@ -144,7 +144,8 @@ public class SettingsActivity extends Activity {
             low.status(l + "%", Color.WHITE);
             high.status(h == Backlight.LAST ? "Последний" : h + "%", Color.WHITE);
         });
-        list.addView(text("Кнопка переключает между этими уровнями. Последний это уровень, который был до переключения вниз", 13, GRAY_TEXT));
+        list.addView(text("Кнопка переключает между этими уровнями. Последний это уровень, который был до переключения вниз. "
+                + "Ниже нуля подсветка выключена, а экран дополнительно затемняется", 13, GRAY_TEXT));
     }
 
     private void presetRow(Row row, boolean isLow) {
@@ -165,23 +166,24 @@ public class SettingsActivity extends Activity {
         });
     }
 
-    // нижний: 0..100, верхний: последний, 0..100. Шаг 5
+    // нижний: MIN..100, верхний: последний, MIN..100. Шаг 5, отрицательные это затемнение
     private void stepPreset(boolean isLow, int dir, boolean wrap) {
+        List<Integer> values = new ArrayList<>();
+        if (!isLow) {
+            values.add(Backlight.LAST);
+        }
+        for (int v = Backlight.MIN; v <= 100; v += 5) {
+            values.add(v);
+        }
         int low = Backlight.low(this);
         int high = Backlight.high(this);
-        int value = isLow ? low : high;
-        int next;
-        if (value == Backlight.LAST) {
-            next = dir > 0 ? 0 : (wrap ? 100 : Backlight.LAST);
+        int index = Math.max(values.indexOf(isLow ? low : high), 0) + dir;
+        if (wrap) {
+            index = (index + values.size()) % values.size();
         } else {
-            next = value + dir * 5;
+            index = Math.max(0, Math.min(values.size() - 1, index));
         }
-        int min = isLow ? 0 : Backlight.LAST;
-        if (next > 100) {
-            next = wrap ? min : 100;
-        } else if (next < 0) {
-            next = isLow ? (wrap ? 100 : 0) : Backlight.LAST;
-        }
+        int next = values.get(index);
         if (isLow) {
             Backlight.setPreset(this, next, high);
         } else {

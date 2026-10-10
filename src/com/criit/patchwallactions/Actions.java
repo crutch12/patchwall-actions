@@ -96,7 +96,7 @@ final class Actions {
         int backlight = Backlight.get(ctx);
         p.edit()
                 .putBoolean("night", true)
-                .putInt("nightPrevBacklight", backlight > 0 ? backlight : 50)
+                .putInt("nightPrevBacklight", backlight)
                 .putInt("nightPrevBlue", TvSettings.get(ctx, TvSettings.BLUE_LIGHT, 0))
                 .apply();
         Backlight.set(ctx, NIGHT_BACKLIGHT);

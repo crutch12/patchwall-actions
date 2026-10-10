@@ -8,14 +8,15 @@ import android.graphics.RectF;
 import android.view.KeyEvent;
 import android.view.View;
 
-// широкий слайдер как в пункте управления iOS: белая заливка, солнце слева, проценты справа
+// широкий слайдер как в пункте управления iOS: светлая заливка, солнце слева, проценты справа.
+// Шкала от Backlight.MIN до 100, отрицательная часть это затемнение поверх экрана
 class BrightnessSlider extends View {
 
     interface Listener {
         void onChange(int value);
     }
 
-    private static final int MIN = 0;
+    private static final int MIN = Backlight.MIN;
     private static final int MAX = 100;
     private static final int STEP = 5;
 
@@ -27,6 +28,9 @@ class BrightnessSlider extends View {
     private final RectF rect = new RectF();
     private final Path clip = new Path();
     private final float radius;
+    private final float tick;
+    private final Paint zeroMark = new Paint();
+    private final Paint zeroMarkOnFill = new Paint();
 
     private int value = 50;
     private Listener listener;
@@ -35,6 +39,9 @@ class BrightnessSlider extends View {
         super(ctx);
         float d = ctx.getResources().getDisplayMetrics().density;
         radius = 22 * d;
+        tick = 2 * d;
+        zeroMark.setColor(0x99D1D1D6);
+        zeroMarkOnFill.setColor(0x668E8E93);
         track.setColor(0xF03A3A3C);
         fill.setColor(0xFFD1D1D6);
         icon.setColor(0xFF8E8E93);
@@ -96,7 +103,12 @@ class BrightnessSlider extends View {
         clip.addRoundRect(rect, r, r, Path.Direction.CW);
         c.clipPath(clip);
         c.drawRect(rect, track);
-        c.drawRect(rect.left, rect.top, rect.left + rect.width() * value / MAX, rect.bottom, fill);
+        float zeroX = rect.left + rect.width() * (0 - MIN) / (MAX - MIN);
+        float valueX = rect.left + rect.width() * (value - MIN) / (MAX - MIN);
+        c.drawRect(rect.left, rect.top, valueX, rect.bottom, fill);
+        // отметка нуля: левее неё уже не подсветка, а затемнение поверх экрана
+        c.drawRect(zeroX - tick / 2, rect.top + rect.height() * 0.3f, zeroX + tick / 2, rect.bottom - rect.height() * 0.3f,
+                valueX > zeroX ? zeroMarkOnFill : zeroMark);
         c.restore();
 
         drawSun(c, h / 2 + 4, h / 2, h * 0.14f);

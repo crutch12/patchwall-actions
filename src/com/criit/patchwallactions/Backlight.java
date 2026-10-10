@@ -20,19 +20,35 @@ final class Backlight {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
-    static int get(Context ctx) {
-        return Settings.Global.getInt(ctx.getContentResolver(), KEY, 50);
-    }
+    // ниже нуля подсветка остаётся на 0, а поверх экрана кладётся чёрный слой (как у Twilight)
+    static final int MIN = -80;
 
-    // "последний" уровень для верхнего пресета
+    // "последний" уровень для верхнего пресета. Уровни кратны 5, поэтому -1 не пересекается с ними
     static final int LAST = -1;
+
+    // уровень от MIN до 100: отрицательный значит дополнительное затемнение
+    static int get(Context ctx) {
+        int dim = dim(ctx);
+        return dim > 0 ? -dim : Settings.Global.getInt(ctx.getContentResolver(), KEY, 50);
+    }
 
     static void set(Context ctx, int value) {
         if (!canWrite(ctx)) {
             return;
         }
-        Settings.Global.putInt(ctx.getContentResolver(), KEY, value);
+        apply(ctx, value);
         rememberLast(ctx, value);
+    }
+
+    static int dim(Context ctx) {
+        return prefs(ctx).getInt("dim", 0);
+    }
+
+    private static void apply(Context ctx, int value) {
+        value = Math.max(MIN, Math.min(100, value));
+        Settings.Global.putInt(ctx.getContentResolver(), KEY, Math.max(value, 0));
+        prefs(ctx).edit().putInt("dim", Math.max(-value, 0)).apply();
+        MiKeyService.applyDim(Math.max(-value, 0));
     }
 
     static int low(Context ctx) {
@@ -60,7 +76,7 @@ final class Backlight {
         int low = low(ctx);
         if (cur != low) {
             rememberLast(ctx, cur);
-            Settings.Global.putInt(ctx.getContentResolver(), KEY, low);
+            apply(ctx, low);
             return;
         }
         int high = high(ctx);
@@ -69,12 +85,12 @@ final class Backlight {
         if (target == low) {
             target = lastLevel(ctx);
         }
-        Settings.Global.putInt(ctx.getContentResolver(), KEY, target);
+        apply(ctx, target);
     }
 
     // нижний пресет не считается "последним", иначе вернуться было бы некуда
     private static void rememberLast(Context ctx, int value) {
-        if (value > 0 && value != low(ctx)) {
+        if (value != low(ctx)) {
             prefs(ctx).edit().putInt("lastLevel", value).apply();
         }
     }
