@@ -398,8 +398,7 @@ public class MenuActivity extends Activity {
     // --- состояние ---
 
     private void bindAll() {
-        int last = Backlight.lastLevel(this);
-        slider.setValue(Backlight.get(this), last);
+        slider.setValue(Backlight.get(this));
         if (pictureTile != null) {
             pictureTile.bind(TvSettings.label(TvSettings.PICTURE_VALUES, TvSettings.PICTURE_LABELS,
                     TvSettings.get(this, TvSettings.PICTURE_MODE, 7)), TILE);

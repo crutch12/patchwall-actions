@@ -122,8 +122,8 @@ public class SettingsActivity extends Activity {
         refreshers.add(() -> {
             int l = Backlight.low(this);
             int h = Backlight.high(this);
-            low.status(l == 0 ? "0, экран выкл" : String.valueOf(l), Color.WHITE);
-            high.status(h == Backlight.LAST ? "Последний" : String.valueOf(h), Color.WHITE);
+            low.status(l + "%", Color.WHITE);
+            high.status(h == Backlight.LAST ? "Последний" : h + "%", Color.WHITE);
         });
         list.addView(text("Кнопка переключает между этими уровнями. Последний это уровень, который был до переключения вниз", 13, GRAY_TEXT));
     }
@@ -146,26 +146,22 @@ public class SettingsActivity extends Activity {
         });
     }
 
-    // нижний: 0..100, верхний: последний, 10..100. Шаг 10
+    // нижний: 0..100, верхний: последний, 0..100. Шаг 5
     private void stepPreset(boolean isLow, int dir, boolean wrap) {
         int low = Backlight.low(this);
         int high = Backlight.high(this);
-        int min = isLow ? 0 : Backlight.LAST;
         int value = isLow ? low : high;
         int next;
-        if (!isLow && value == Backlight.LAST) {
-            next = dir > 0 ? 10 : (wrap ? 100 : Backlight.LAST);
+        if (value == Backlight.LAST) {
+            next = dir > 0 ? 0 : (wrap ? 100 : Backlight.LAST);
         } else {
-            next = value + dir * 10;
-            if (!isLow && next < 10) {
-                next = Backlight.LAST;
-            }
+            next = value + dir * 5;
         }
+        int min = isLow ? 0 : Backlight.LAST;
         if (next > 100) {
             next = wrap ? min : 100;
-        }
-        if (next < min) {
-            next = wrap ? 100 : min;
+        } else if (next < 0) {
+            next = isLow ? (wrap ? 100 : 0) : Backlight.LAST;
         }
         if (isLow) {
             Backlight.setPreset(this, next, high);

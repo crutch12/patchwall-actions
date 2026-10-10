@@ -21,7 +21,9 @@ final class Setup {
     // права, служба, работа в фоне
     static void grantAll(Context ctx, Callback callback) {
         String pkg = ctx.getPackageName();
-        String service = new ComponentName(ctx, MiKeyService.class).flattenToString();
+        ComponentName component = new ComponentName(ctx, MiKeyService.class);
+        String service = component.flattenToString();
+        String serviceShort = component.flattenToShortString();
         run(ctx, callback, adb -> {
             adb.shell("pm grant " + pkg + " android.permission.WRITE_SECURE_SETTINGS");
             adb.shell("pm grant " + pkg + " android.permission.READ_LOGS");
@@ -29,22 +31,27 @@ final class Setup {
             adb.shell("dumpsys deviceidle whitelist +" + pkg);
             adb.shell("cmd appops set " + pkg + " RUN_ANY_IN_BACKGROUND allow");
 
-            // службу перевключаем, чтобы она подхватила READ_LOGS. Чужие службы не трогаем
+            // READ_LOGS процесс получает только при запуске, поэтому перезапускаем приложение
+            // и перевключаем службу. Делаем это отдельным процессом на TV: наш процесс при этом умрёт.
+            // Чужие службы не трогаем
             String current = adb.shell("settings get secure enabled_accessibility_services");
             StringBuilder others = new StringBuilder();
             if (!current.isEmpty() && !"null".equals(current)) {
                 for (String s : current.split(":")) {
-                    if (!s.isEmpty() && !s.equalsIgnoreCase(service)) {
+                    if (!s.isEmpty() && !s.equalsIgnoreCase(service) && !s.equalsIgnoreCase(serviceShort)) {
                         others.append(others.length() > 0 ? ":" : "").append(s);
                     }
                 }
             }
-            adb.shell(others.length() > 0
+            String without = others.length() > 0
                     ? "settings put secure enabled_accessibility_services " + others
-                    : "settings delete secure enabled_accessibility_services");
-            adb.shell("settings put secure enabled_accessibility_services "
-                    + (others.length() > 0 ? others + ":" : "") + service);
-            adb.shell("settings put secure accessibility_enabled 1");
+                    : "settings delete secure enabled_accessibility_services";
+            String with = "settings put secure enabled_accessibility_services "
+                    + (others.length() > 0 ? others + ":" : "") + service;
+            adb.shell("nohup sh -c '"
+                    + "sleep 1; " + without + "; am force-stop " + pkg + "; " + with + "; "
+                    + "settings put secure accessibility_enabled 1; am start -n " + pkg + "/.SettingsActivity"
+                    + "' >/dev/null 2>&1 &");
         });
     }
 

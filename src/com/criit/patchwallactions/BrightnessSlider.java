@@ -15,9 +15,9 @@ class BrightnessSlider extends View {
         void onChange(int value);
     }
 
-    private static final int MIN = 10;
+    private static final int MIN = 0;
     private static final int MAX = 100;
-    private static final int STEP = 10;
+    private static final int STEP = 5;
 
     private final Paint track = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -29,7 +29,6 @@ class BrightnessSlider extends View {
     private final float radius;
 
     private int value = 50;
-    private boolean off;
     private Listener listener;
 
     BrightnessSlider(Context ctx) {
@@ -54,10 +53,8 @@ class BrightnessSlider extends View {
         this.listener = listener;
     }
 
-    // 0 значит подсветка выключена кнопкой, на слайдере показываем последний уровень серым
-    void setValue(int newValue, int fallback) {
-        off = newValue == 0;
-        value = clamp(off ? fallback : newValue);
+    void setValue(int newValue) {
+        value = clamp(newValue);
         invalidate();
     }
 
@@ -77,9 +74,7 @@ class BrightnessSlider extends View {
         if (delta == 0) {
             return super.onKeyDown(keyCode, event);
         }
-        int next = off ? value : clamp(value + delta);
-        off = false;
-        value = next;
+        value = clamp(value + delta);
         invalidate();
         if (listener != null) {
             listener.onChange(value);
@@ -101,13 +96,12 @@ class BrightnessSlider extends View {
         clip.addRoundRect(rect, r, r, Path.Direction.CW);
         c.clipPath(clip);
         c.drawRect(rect, track);
-        fill.setAlpha(off ? 70 : 255);
         c.drawRect(rect.left, rect.top, rect.left + rect.width() * value / MAX, rect.bottom, fill);
         c.restore();
 
         drawSun(c, h / 2 + 4, h / 2, h * 0.14f);
 
-        String label = off ? "выкл" : value + "%";
+        String label = value + "%";
         float baseline = h / 2 - (text.descent() + text.ascent()) / 2;
         c.drawText(label, w - h * 0.4f, baseline, text);
 
