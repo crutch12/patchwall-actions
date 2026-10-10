@@ -15,6 +15,8 @@
     <!-- выдаётся через adb, нужен чтобы видеть нажатия кнопки Xiaomi в журнале -->
     <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- подключение к adb самого TV (127.0.0.1:5555) для настройки без компьютера -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />

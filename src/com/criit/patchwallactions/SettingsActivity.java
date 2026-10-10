@@ -43,6 +43,7 @@ public class SettingsActivity extends Activity {
     private static final String[] TILE_LABELS = {"Картинка", "Звук", "Таймер сна", "Ночь", "Wi-Fi", "Amnezia", "Синий свет"};
 
     private float density;
+    private View firstRow;
     private LinearLayout list;
     private final List<Runnable> refreshers = new ArrayList<>();
 
@@ -60,8 +61,8 @@ public class SettingsActivity extends Activity {
         list.addView(title);
         list.addView(text("Пункт управления на кнопке Xiaomi. Двойное нажатие или удержание открывают меню", 14, GRAY_TEXT));
 
-        buildSinglePress();
         buildAccess();
+        buildSinglePress();
         buildTiles();
 
         ScrollView scroll = new ScrollView(this);
@@ -71,6 +72,9 @@ public class SettingsActivity extends Activity {
         root.setBackgroundColor(0xFF000000);
         root.addView(scroll, new FrameLayout.LayoutParams(dp(640), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER_HORIZONTAL));
         setContentView(root);
+        // иначе фокус встаёт на сам список и первое нажатие стрелки теряется
+        scroll.setFocusable(false);
+        firstRow.post(firstRow::requestFocus);
     }
 
     @Override
@@ -108,51 +112,85 @@ public class SettingsActivity extends Activity {
 
     private void buildAccess() {
         list.addView(section("Доступ"));
+        list.addView(text("Всё настраивается через отладку по сети самого TV. При первой настройке TV спросит "
+                + "Разрешить отладку: отметьте Всегда и нажмите Разрешить", 13, GRAY_TEXT));
+
+        Row debug = row("Отладка по сети");
+        debug.view.setOnClickListener(v -> {
+            toast("Включите Отладку по USB и Отладку по сети, затем вернитесь сюда");
+            Actions.open(this, Actions.action(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
+                    Actions.action(Settings.ACTION_DEVICE_INFO_SETTINGS));
+        });
+        refreshers.add(() -> {
+            debug.status("...", GRAY_TEXT);
+            new Thread(() -> {
+                boolean on = LocalAdb.reachable();
+                runOnUiThread(() -> debug.status(on ? "Вкл" : "Включить", on ? OK : BAD));
+            }).start();
+        });
+
+        Row setup = row("Настроить всё автоматически");
+        setup.view.setOnClickListener(v -> {
+            setup.status("Ждём TV...", GRAY_TEXT);
+            Setup.grantAll(this, error -> {
+                toast(error == null ? "Готово" : error);
+                refreshAll();
+            });
+        });
+        refreshers.add(() -> {
+            boolean ready = serviceEnabled() && ignoringBattery() && granted(Manifest.permission.WRITE_SECURE_SETTINGS)
+                    && granted(Manifest.permission.READ_LOGS);
+            setup.status(ready ? "Готово" : "Запустить", ready ? OK : BAD);
+        });
 
         Row service = row("Служба специальных возможностей");
         service.view.setOnClickListener(v -> Actions.open(this, Actions.action(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
-        refreshers.add(() -> service.status(serviceEnabled() ? "Вкл" : "Включить", serviceEnabled() ? OK : BAD));
+        refreshers.add(() -> service.status(serviceEnabled() ? "Вкл" : "Выкл", serviceEnabled() ? OK : BAD));
 
         Row battery = row("Не выгружать из памяти");
         battery.view.setOnClickListener(v -> Actions.open(this,
                 new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName())),
                 Actions.action(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)));
-        refreshers.add(() -> battery.status(ignoringBattery() ? "Да" : "Настроить", ignoringBattery() ? OK : BAD));
+        refreshers.add(() -> battery.status(ignoringBattery() ? "Да" : "Нет", ignoringBattery() ? OK : BAD));
 
         Row secure = row("Менять настройки TV");
-        secure.view.setOnClickListener(v -> toast("Выдаётся только через adb, команда ниже"));
         refreshers.add(() -> grantedStatus(secure, Manifest.permission.WRITE_SECURE_SETTINGS));
 
         Row logs = row("Видеть нажатия кнопки");
-        logs.view.setOnClickListener(v -> toast("Выдаётся только через adb, команда ниже. Без него двойное нажатие хуже распознаётся"));
         refreshers.add(() -> grantedStatus(logs, Manifest.permission.READ_LOGS));
 
         Row location = row("Имя сети Wi-Fi");
         location.view.setOnClickListener(v -> requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1));
         refreshers.add(() -> grantedStatus(location, Manifest.permission.ACCESS_FINE_LOCATION));
 
-        Row patchWall = row("PatchWall не мелькает");
-        patchWall.view.setOnClickListener(v -> toast("PatchWall удаляется для пользователя через adb, команда ниже. Вернуть: "
-                + "adb shell cmd package install-existing " + MiKeyService.PATCHWALL));
-        refreshers.add(() -> {
-            boolean gone = !MiKeyService.patchWallInstalled(this);
-            patchWall.status(gone ? "Да" : "Нет", gone ? OK : BAD);
+        Row patchWall = row("PatchWall");
+        patchWall.view.setOnClickListener(v -> {
+            boolean installed = MiKeyService.patchWallInstalled(this);
+            patchWall.status("Ждём TV...", GRAY_TEXT);
+            Setup.setPatchWall(this, !installed, error -> {
+                toast(error == null ? (installed ? "PatchWall удалён, кнопка больше не мелькает" : "PatchWall возвращён") : error);
+                refreshAll();
+            });
         });
+        refreshers.add(() -> {
+            boolean installed = MiKeyService.patchWallInstalled(this);
+            patchWall.status(installed ? "Мелькает, удалить" : "Удалён, вернуть", installed ? BAD : OK);
+        });
+    }
 
-        String pkg = getPackageName();
-        TextView adb = text("Команды для adb с компьютера:\n"
-                + "adb shell pm grant " + pkg + " android.permission.WRITE_SECURE_SETTINGS\n"
-                + "adb shell pm grant " + pkg + " android.permission.READ_LOGS\n"
-                + "adb shell dumpsys deviceidle whitelist +" + pkg + "\n"
-                + "adb shell pm uninstall -k --user 0 " + MiKeyService.PATCHWALL, 13, GRAY_TEXT);
-        adb.setTypeface(Typeface.MONOSPACE);
-        adb.setPadding(dp(4), dp(12), 0, 0);
-        list.addView(adb);
+    private void refreshAll() {
+        for (Runnable r : refreshers) {
+            r.run();
+        }
+    }
+
+    private boolean granted(String permission) {
+        return checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void grantedStatus(Row row, String permission) {
-        boolean granted = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
-        row.status(granted ? "Есть" : "Нет", granted ? OK : BAD);
+        boolean ok = granted(permission);
+        row.status(ok ? "Есть" : "Нет", ok ? OK : BAD);
     }
 
     private boolean serviceEnabled() {
@@ -216,6 +254,9 @@ public class SettingsActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
         lp.topMargin = dp(6);
         list.addView(row.view, lp);
+        if (firstRow == null) {
+            firstRow = row.view;
+        }
         return row;
     }
 
