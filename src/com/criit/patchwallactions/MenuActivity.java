@@ -6,6 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.StateListAnimator;
 import android.content.res.ColorStateList;
 import android.database.ContentObserver;
 import android.graphics.Color;
@@ -27,6 +31,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -117,6 +122,8 @@ public class MenuActivity extends Activity {
 
         panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setClipChildren(false);
+        panel.setClipToPadding(false);
 
         buildBrightness();
         buildInputs();
@@ -125,6 +132,7 @@ public class MenuActivity extends Activity {
         wireFocus();
 
         FrameLayout root = new FrameLayout(this);
+        root.setClipChildren(false);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(560), ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER_VERTICAL | Gravity.END);
         lp.rightMargin = dp(48);
@@ -314,7 +322,7 @@ public class MenuActivity extends Activity {
             tiles.add(wifiTile);
         }
         if (Actions.tileVisible(this, "vpn")) {
-            vpnTile = new Tile("Amnezia ↗");
+            vpnTile = new Tile("Amnezia VPN");
             vpnTile.view.setOnClickListener(v -> openAmnezia());
             vpnTile.view.setOnLongClickListener(v -> openSystem(
                     Actions.action(Settings.ACTION_VPN_SETTINGS),
@@ -552,6 +560,9 @@ public class MenuActivity extends Activity {
         if (panel.getChildCount() > 0 && !(panel.getChildAt(panel.getChildCount() - 1) instanceof TextView)) {
             lp.topMargin = dp(10);
         }
+        // увеличенная при фокусе плитка не должна обрезаться краями строки
+        row.setClipChildren(false);
+        row.setClipToPadding(false);
         panel.addView(row, lp);
         return row;
     }
@@ -597,15 +608,17 @@ public class MenuActivity extends Activity {
             subtitle.setSingleLine();
             view.addView(subtitle);
 
-            view.setOnFocusChangeListener((v, hasFocus) -> v.animate()
-                    .scaleX(hasFocus ? 1.04f : 1f).scaleY(hasFocus ? 1.04f : 1f).setDuration(120).start());
+            view.setStateListAnimator(lift());
             bind("", TILE);
         }
 
+        // выключенная плитка в фокусе светлеет с тёмным текстом, включённая остаётся своего цвета
         void bind(String text, int color) {
+            boolean neutral = color == TILE;
             subtitle.setText(text);
             subtitle.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
-            subtitle.setTextColor(textColors(color == TILE ? GRAY_TEXT : 0xDDFFFFFF, FOCUS_SUBTEXT));
+            subtitle.setTextColor(neutral ? textColors(GRAY_TEXT, FOCUS_SUBTEXT) : ColorStateList.valueOf(0xE6FFFFFF));
+            title.setTextColor(neutral ? textColors(Color.WHITE, FOCUS_TEXT) : ColorStateList.valueOf(Color.WHITE));
             view.setBackground(background(color));
         }
     }
@@ -614,11 +627,41 @@ public class MenuActivity extends Activity {
         return new ColorStateList(new int[][]{{android.R.attr.state_focused}, {}}, new int[]{focused, normal});
     }
 
+    // фон: в фокусе светлее (нейтральная плитка становится светлой), при нажатии чуть темнее фокуса
     private StateListDrawable background(int color) {
+        int focused = color == TILE ? FOCUS_BG : blend(color, Color.WHITE, 0.22f);
         StateListDrawable states = new StateListDrawable();
-        states.addState(new int[]{android.R.attr.state_focused}, shape(FOCUS_BG));
+        states.addState(new int[]{android.R.attr.state_pressed}, shape(blend(focused, Color.BLACK, 0.12f)));
+        states.addState(new int[]{android.R.attr.state_focused}, shape(focused));
         states.addState(new int[]{}, shape(color));
         return states;
+    }
+
+    // подъём в фокусе с тенью и "вдавливание" на нажатие ОК
+    private StateListAnimator lift() {
+        StateListAnimator animator = new StateListAnimator();
+        animator.addState(new int[]{android.R.attr.state_pressed}, scaleTo(1.0f, 2));
+        animator.addState(new int[]{android.R.attr.state_focused}, scaleTo(1.06f, 14));
+        animator.addState(new int[]{}, scaleTo(1f, 0));
+        return animator;
+    }
+
+    private Animator scaleTo(float scale, int liftDp) {
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(
+                ObjectAnimator.ofFloat(null, View.SCALE_X, scale),
+                ObjectAnimator.ofFloat(null, View.SCALE_Y, scale),
+                ObjectAnimator.ofFloat(null, View.TRANSLATION_Z, dp(liftDp)));
+        set.setDuration(140);
+        set.setInterpolator(new DecelerateInterpolator(2f));
+        return set;
+    }
+
+    private static int blend(int from, int to, float amount) {
+        int r = (int) (Color.red(from) + (Color.red(to) - Color.red(from)) * amount);
+        int g = (int) (Color.green(from) + (Color.green(to) - Color.green(from)) * amount);
+        int b = (int) (Color.blue(from) + (Color.blue(to) - Color.blue(from)) * amount);
+        return Color.argb(0xFF, r, g, b);
     }
 
     private GradientDrawable shape(int color) {
