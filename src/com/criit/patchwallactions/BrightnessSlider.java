@@ -91,15 +91,18 @@ class BrightnessSlider extends View {
     protected void onDraw(Canvas c) {
         float w = getWidth();
         float h = getHeight();
-        rect.set(0, 0, w, h);
+        // при фокусе рамка снаружи, а сам слайдер чуть уже, чтобы рамка не наезжала на содержимое
+        float gap = isFocused() ? ring.getStrokeWidth() * 2 : 0;
+        rect.set(gap, gap, w - gap, h - gap);
+        float r = radius - gap;
 
         c.save();
         clip.reset();
-        clip.addRoundRect(rect, radius, radius, Path.Direction.CW);
+        clip.addRoundRect(rect, r, r, Path.Direction.CW);
         c.clipPath(clip);
         c.drawRect(rect, track);
         fill.setAlpha(off ? 70 : 255);
-        c.drawRect(0, 0, w * value / MAX, h, fill);
+        c.drawRect(rect.left, rect.top, rect.left + rect.width() * value / MAX, rect.bottom, fill);
         c.restore();
 
         drawSun(c, h / 2 + 4, h / 2, h * 0.14f);
@@ -110,7 +113,7 @@ class BrightnessSlider extends View {
 
         if (isFocused()) {
             float inset = ring.getStrokeWidth() / 2;
-            rect.inset(inset, inset);
+            rect.set(inset, inset, w - inset, h - inset);
             c.drawRoundRect(rect, radius, radius, ring);
         }
     }

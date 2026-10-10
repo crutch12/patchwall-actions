@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -130,11 +131,20 @@ public class SettingsActivity extends Activity {
         location.view.setOnClickListener(v -> requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1));
         refreshers.add(() -> grantedStatus(location, Manifest.permission.ACCESS_FINE_LOCATION));
 
+        Row patchWall = row("PatchWall не мелькает");
+        patchWall.view.setOnClickListener(v -> toast("PatchWall удаляется для пользователя через adb, команда ниже. Вернуть: "
+                + "adb shell cmd package install-existing " + MiKeyService.PATCHWALL));
+        refreshers.add(() -> {
+            boolean gone = !MiKeyService.patchWallInstalled(this);
+            patchWall.status(gone ? "Да" : "Нет", gone ? OK : BAD);
+        });
+
         String pkg = getPackageName();
         TextView adb = text("Команды для adb с компьютера:\n"
                 + "adb shell pm grant " + pkg + " android.permission.WRITE_SECURE_SETTINGS\n"
                 + "adb shell pm grant " + pkg + " android.permission.READ_LOGS\n"
-                + "adb shell dumpsys deviceidle whitelist +" + pkg, 13, GRAY_TEXT);
+                + "adb shell dumpsys deviceidle whitelist +" + pkg + "\n"
+                + "adb shell pm uninstall -k --user 0 " + MiKeyService.PATCHWALL, 13, GRAY_TEXT);
         adb.setTypeface(Typeface.MONOSPACE);
         adb.setPadding(dp(4), dp(12), 0, 0);
         list.addView(adb);
@@ -232,26 +242,29 @@ public class SettingsActivity extends Activity {
 
             TextView name = new TextView(SettingsActivity.this);
             name.setText(label);
-            name.setTextColor(Color.WHITE);
+            name.setTextColor(new ColorStateList(new int[][]{{android.R.attr.state_focused}, {}},
+                    new int[]{0xFF1C1C1E, Color.WHITE}));
+            name.setDuplicateParentStateEnabled(true);
             name.setTextSize(16);
             view.addView(name, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
             value = new TextView(SettingsActivity.this);
             value.setTextSize(15);
+            value.setDuplicateParentStateEnabled(true);
             view.addView(value);
         }
 
         void status(String text, int color) {
             value.setText(text);
-            value.setTextColor(color);
+            value.setTextColor(new ColorStateList(new int[][]{{android.R.attr.state_focused}, {}},
+                    new int[]{0xFF48484A, color}));
         }
     }
 
     private StateListDrawable background() {
         StateListDrawable states = new StateListDrawable();
-        GradientDrawable focused = shape(0xFF3A3A3C);
-        focused.setStroke(dp(3), Color.WHITE);
-        states.addState(new int[]{android.R.attr.state_focused}, focused);
+        // фокус как в Android TV: светлая строка и тёмный текст
+        states.addState(new int[]{android.R.attr.state_focused}, shape(0xFFE5E5EA));
         states.addState(new int[]{}, shape(ROW));
         return states;
     }

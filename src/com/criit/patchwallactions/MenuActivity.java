@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -50,6 +51,10 @@ public class MenuActivity extends Activity {
     private static final int GREEN = 0xFF2F6B47;
     private static final int ORANGE = 0xFF8A5A24;
     private static final int GRAY_TEXT = 0xFFAEAEB2;
+    // фокус как в Android TV: светлая плитка и тёмный текст, без рамки поверх содержимого
+    private static final int FOCUS_BG = 0xFFE5E5EA;
+    private static final int FOCUS_TEXT = 0xFF1C1C1E;
+    private static final int FOCUS_SUBTEXT = 0xFF48484A;
     private static final float DIM = 0.85f;
     private static final int COLUMNS = 4;
     // пока двигают слайдер, видна только она и картинка без затемнения
@@ -240,7 +245,7 @@ public class MenuActivity extends Activity {
         t.bind(connected ? "" : "нет сигнала", active ? BLUE : TILE);
         t.view.setSelected(active);
         if (!connected) {
-            t.title.setTextColor(GRAY_TEXT);
+            t.title.setTextColor(textColors(GRAY_TEXT, FOCUS_TEXT));
         }
         t.view.setOnClickListener(v -> {
             if (connected) {
@@ -574,20 +579,22 @@ public class MenuActivity extends Activity {
             view = new LinearLayout(MenuActivity.this);
             view.setOrientation(LinearLayout.VERTICAL);
             view.setGravity(Gravity.CENTER_VERTICAL);
-            view.setPadding(dp(16), 0, dp(12), 0);
+            view.setPadding(dp(18), 0, dp(14), 0);
             view.setFocusable(true);
             view.setClickable(true);
             view.setLongClickable(true);
 
             title = new TextView(MenuActivity.this);
             title.setText(text);
-            title.setTextColor(Color.WHITE);
+            title.setTextColor(textColors(Color.WHITE, FOCUS_TEXT));
+            title.setDuplicateParentStateEnabled(true);
             title.setTextSize(16);
             title.setSingleLine();
             view.addView(title);
 
             subtitle = new TextView(MenuActivity.this);
             subtitle.setTextSize(13);
+            subtitle.setDuplicateParentStateEnabled(true);
             subtitle.setSingleLine();
             view.addView(subtitle);
 
@@ -599,16 +606,18 @@ public class MenuActivity extends Activity {
         void bind(String text, int color) {
             subtitle.setText(text);
             subtitle.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
-            subtitle.setTextColor(color == TILE ? GRAY_TEXT : 0xDDFFFFFF);
+            subtitle.setTextColor(textColors(color == TILE ? GRAY_TEXT : 0xDDFFFFFF, FOCUS_SUBTEXT));
             view.setBackground(background(color));
         }
     }
 
+    private static ColorStateList textColors(int normal, int focused) {
+        return new ColorStateList(new int[][]{{android.R.attr.state_focused}, {}}, new int[]{focused, normal});
+    }
+
     private StateListDrawable background(int color) {
         StateListDrawable states = new StateListDrawable();
-        GradientDrawable focused = shape(color);
-        focused.setStroke(dp(3), Color.WHITE);
-        states.addState(new int[]{android.R.attr.state_focused}, focused);
+        states.addState(new int[]{android.R.attr.state_focused}, shape(FOCUS_BG));
         states.addState(new int[]{}, shape(color));
         return states;
     }

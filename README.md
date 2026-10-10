@@ -34,12 +34,12 @@
 Кнопка Xiaomi (Android keycode 192) до приложений не доходит. Прошивка обрабатывает её в `MiTVWindowPolicyInjector` и на отпускание запускает PatchWall (`com.mitv.tvhome.atv`) явным интентом, подменить его нельзя
 
 - нажатия читаются из logcat: прошивка пишет `handleAction192` на нажатие и отпускание и `onLongPress:192` на удержание. Нужен `READ_LOGS`. Без него приложение считает нажатием появление PatchWall, двойное нажатие так распознаётся хуже
-- PatchWall закрывается "назад" из службы спец. возможностей, только когда он действительно сверху
+- PatchWall удаляется для пользователя (`pm uninstall -k --user 0`). Прошивка по кнопке пытается его запустить, не находит и ничего не показывает, а нажатие всё равно пишется в журнал. Если PatchWall оставить, служба закрывает его "назад", но он успевает мелькнуть
 - служба не перехватывает кнопки (`flagRequestFilterKeyEvents` нет), поэтому не бывает залипаний, как у tvQuickActions и Button Mapper
 - подсветка, картинка, звук и синий фильтр это `Settings.Global` (`picture_backlight`, `picture_mode`, `sound_style`, `picture_blue_light`), их применяет `TVMenuSettingsService`. У каждого входа своя подсветка. Нужен `WRITE_SECURE_SETTINGS`, без него плитки показывают подсказку
 - Wi-Fi переключается через `WifiManager.setWifiEnabled`, поэтому `targetSdkVersion 28`
 
-PatchWall должен быть включён: если его отключить, прошивка по кнопке открывает Live TV
+Отключать PatchWall (`pm disable-user`) или ставить `patchwall_enable=false` нельзя: тогда прошивка по кнопке открывает Live TV. Только удалять для пользователя
 
 ## Сборка
 
@@ -60,6 +60,7 @@ adb install -r --no-incremental out/patchwall-actions.apk
 adb shell pm grant com.criit.patchwallactions android.permission.WRITE_SECURE_SETTINGS
 adb shell pm grant com.criit.patchwallactions android.permission.READ_LOGS
 adb shell dumpsys deviceidle whitelist +com.criit.patchwallactions
+adb shell pm uninstall -k --user 0 com.mitv.tvhome.atv   # чтобы PatchWall не мелькал
 ```
 
 Дальше на TV открыть PatchWall Actions и включить службу и "не выгружать из памяти" кнопками в разделе Доступ. Или через adb, сохранив Twilight:
@@ -74,10 +75,12 @@ adb shell settings put secure enabled_accessibility_services com.urbandroid.lux/
 
 ```sh
 adb uninstall com.criit.patchwallactions
+adb shell cmd package install-existing com.mitv.tvhome.atv   # вернуть PatchWall
 ```
 
 ## Ограничения
 
-- если процесс PatchWall выгружен из памяти, он открывается до 2 с и на это время мелькает, меню открывается с той же задержкой
+- одно нажатие срабатывает через 0.4 с: приложение ждёт, не будет ли второго
+- обновление прошивки может вернуть PatchWall, тогда команду удаления нужно повторить (в настройках приложения это видно в строке "PatchWall не мелькает")
 - у Amnezia нет внешнего API: переключить сервер или подключиться из меню нельзя
 - Bluetooth в меню нет специально: пульт Xiaomi работает через Bluetooth

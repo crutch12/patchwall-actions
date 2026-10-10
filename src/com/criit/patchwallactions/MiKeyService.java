@@ -135,6 +135,10 @@ public class MiKeyService extends AccessibilityService {
         }
         if (pending) {
             cancelPending();
+            if (!patchWallInstalled(this)) {
+                openMenu();
+                return;
+            }
             menuRequested = true;
             patchWallClosed = false;
             main.postDelayed(menuFallback, MENU_FALLBACK_MS);
@@ -147,6 +151,18 @@ public class MiKeyService extends AccessibilityService {
     private void cancelPending() {
         pending = false;
         main.removeCallbacks(singlePress);
+    }
+
+    // если PatchWall удалить для пользователя (pm uninstall --user 0), прошивка по кнопке
+    // ничего не открывает, и мелькать нечему. Флаг patchwall_enable при этом должен остаться true,
+    // иначе прошивка откроет Live TV
+    static boolean patchWallInstalled(android.content.Context ctx) {
+        try {
+            ctx.getPackageManager().getApplicationInfo(PATCHWALL, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
     }
 
     private void openRequestedMenu() {
