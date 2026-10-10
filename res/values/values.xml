@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PatchWall Actions</string>
-    <string name="a11y_desc">Кнопка Xiaomi на пульте: одно нажатие переключает подсветку, двойное открывает меню. Кнопки пульта не перехватываются</string>
 
     <style name="Overlay" parent="@android:style/Theme.Translucent.NoTitleBar">
         <item name="android:windowAnimationStyle">@null</item>

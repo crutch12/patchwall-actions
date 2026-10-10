@@ -110,6 +110,11 @@ public class MenuActivity extends Activity {
     };
 
     @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(Lang.wrap(base));
+    }
+
+    @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         density = getResources().getDisplayMetrics().density;
@@ -200,7 +205,7 @@ public class MenuActivity extends Activity {
     // --- строки меню ---
 
     private void buildBrightness() {
-        panel.addView(caption("Яркость"));
+        panel.addView(caption(getString(R.string.menu_brightness)));
         slider = new BrightnessSlider(this);
         slider.setListener(value -> {
             if (!requireAccess()) {
@@ -229,14 +234,14 @@ public class MenuActivity extends Activity {
             return;
         }
 
-        View label = caption("Источник");
+        View label = caption(getString(R.string.menu_source));
         panel.addView(label);
         fadeOnPreview.add(label);
         LinearLayout row = row(dp(72));
         String current = Inputs.current(this);
         List<View> cells = new ArrayList<>();
 
-        cells.add(inputTile(row, "Главный", Inputs.HOME, current, true));
+        cells.add(inputTile(row, getString(R.string.menu_home), Inputs.HOME, current, true));
         for (int i = 0; i < hdmi.size() && cells.size() < COLUMNS; i++) {
             String id = hdmi.get(i).getId();
             boolean connected = Inputs.connected(this, id);
@@ -253,7 +258,7 @@ public class MenuActivity extends Activity {
     private View inputTile(LinearLayout row, String title, String id, String current, boolean connected) {
         Tile t = new Tile(title);
         boolean active = id.equals(current);
-        t.bind(connected ? "" : "нет сигнала", active ? BLUE : TILE);
+        t.bind(connected ? "" : getString(R.string.menu_no_signal), active ? BLUE : TILE);
         t.view.setSelected(active);
         if (!connected) {
             t.title.setTextColor(textColors(GRAY_TEXT, FOCUS_TEXT));
@@ -262,7 +267,7 @@ public class MenuActivity extends Activity {
             if (connected) {
                 switchInput(id);
             } else {
-                toast("Нет сигнала на " + title);
+                toast(getString(R.string.menu_no_signal_on, title));
             }
         });
         t.view.setOnLongClickListener(v -> openSystem(
@@ -281,25 +286,25 @@ public class MenuActivity extends Activity {
         if (session == null) {
             return;
         }
-        View label = caption("Сейчас играет: " + Media.title(this, session));
+        View label = caption(getString(R.string.menu_now_playing, Media.title(this, session)));
         panel.addView(label);
         fadeOnPreview.add(label);
         LinearLayout row = row(dp(64));
         List<View> cells = new ArrayList<>();
 
-        Tile prev = new Tile("Назад");
+        Tile prev = new Tile(getString(R.string.menu_prev));
         prev.view.setOnClickListener(v -> session.getTransportControls().skipToPrevious());
-        Tile play = new Tile(Media.playing(session) ? "Пауза" : "Играть");
+        Tile play = new Tile(Media.playing(session) ? getString(R.string.menu_pause) : getString(R.string.menu_play));
         play.view.setOnClickListener(v -> {
             if (Media.playing(session)) {
                 session.getTransportControls().pause();
-                play.title.setText("Играть");
+                play.title.setText(R.string.menu_play);
             } else {
                 session.getTransportControls().play();
-                play.title.setText("Пауза");
+                play.title.setText(R.string.menu_pause);
             }
         });
-        Tile next = new Tile("Вперёд");
+        Tile next = new Tile(getString(R.string.menu_next));
         next.view.setOnClickListener(v -> session.getTransportControls().skipToNext());
         for (Tile t : new Tile[]{prev, play, next}) {
             t.view.setOnLongClickListener(v -> {
@@ -322,7 +327,7 @@ public class MenuActivity extends Activity {
         if (recent.isEmpty()) {
             return;
         }
-        View label = caption("Недавние");
+        View label = caption(getString(R.string.menu_recent));
         panel.addView(label);
         fadeOnPreview.add(label);
         LinearLayout row = row(dp(72));
@@ -331,7 +336,7 @@ public class MenuActivity extends Activity {
             String pkg = recent.get(i);
             Tile t = new Tile(Apps.label(this, pkg));
             t.title.setEllipsize(TextUtils.TruncateAt.END);
-            t.bind(pkg.equals(MiKeyService.foregroundApp) ? "Открыто" : "", TILE);
+            t.bind(pkg.equals(MiKeyService.foregroundApp) ? getString(R.string.menu_open) : "", TILE);
             t.view.setOnClickListener(v -> {
                 Apps.open(this, pkg);
                 finish();
@@ -342,7 +347,7 @@ public class MenuActivity extends Activity {
                 if (current) {
                     finish();
                 } else {
-                    t.bind("Закрыто", TILE);
+                    t.bind(getString(R.string.menu_closed), TILE);
                 }
                 return true;
             });
@@ -356,13 +361,13 @@ public class MenuActivity extends Activity {
     }
 
     private void buildControls() {
-        View label = caption("Управление");
+        View label = caption(getString(R.string.menu_controls));
         panel.addView(label);
         fadeOnPreview.add(label);
 
         List<Tile> tiles = new ArrayList<>();
         if (Actions.tileVisible(this, "picture")) {
-            pictureTile = new Tile("Картинка");
+            pictureTile = new Tile(getString(R.string.menu_picture));
             pictureTile.view.setOnClickListener(v -> cycle(TvSettings.PICTURE_MODE, TvSettings.PICTURE_VALUES, 7));
             pictureTile.view.setOnLongClickListener(v -> openSystem(
                     Actions.action("com.mitv.settings.PICTURE_SETTINGS"),
@@ -370,14 +375,14 @@ public class MenuActivity extends Activity {
             tiles.add(pictureTile);
         }
         if (Actions.tileVisible(this, "sound")) {
-            soundTile = new Tile("Звук");
+            soundTile = new Tile(getString(R.string.menu_sound));
             soundTile.view.setOnClickListener(v -> cycle(TvSettings.SOUND_STYLE, TvSettings.SOUND_VALUES, 0));
             soundTile.view.setOnLongClickListener(v -> openSystem(
                     Actions.action(Settings.ACTION_SOUND_SETTINGS)));
             tiles.add(soundTile);
         }
         if (Actions.tileVisible(this, "timer")) {
-            timerTile = new Tile("Таймер сна");
+            timerTile = new Tile(getString(R.string.menu_timer));
             timerTile.view.setOnClickListener(v -> {
                 SleepTimer.cycle(this);
                 bindTimer();
@@ -389,7 +394,7 @@ public class MenuActivity extends Activity {
             tiles.add(timerTile);
         }
         if (Actions.tileVisible(this, "night")) {
-            nightTile = new Tile("Ночь");
+            nightTile = new Tile(getString(R.string.menu_night));
             nightTile.view.setOnClickListener(v -> {
                 if (requireAccess()) {
                     Actions.toggleNight(this);
@@ -416,7 +421,7 @@ public class MenuActivity extends Activity {
             tiles.add(vpnTile);
         }
         if (Actions.tileVisible(this, "blue")) {
-            blueTile = new Tile("Синий свет");
+            blueTile = new Tile(getString(R.string.menu_blue));
             blueTile.view.setOnClickListener(v -> {
                 if (requireAccess()) {
                     TvSettings.put(this, TvSettings.BLUE_LIGHT,
@@ -429,18 +434,18 @@ public class MenuActivity extends Activity {
             tiles.add(blueTile);
         }
         if (Actions.tileVisible(this, "cinema")) {
-            tiles.add(sceneTile("Кино", Actions.SCENE_CINEMA));
+            tiles.add(sceneTile(getString(R.string.menu_cinema), Actions.SCENE_CINEMA));
         }
         if (Actions.tileVisible(this, "game")) {
-            tiles.add(sceneTile("Игра", Actions.SCENE_GAME));
+            tiles.add(sceneTile(getString(R.string.menu_game), Actions.SCENE_GAME));
         }
         if (Actions.tileVisible(this, "myscene") && Actions.mySceneSaved(this)) {
-            tiles.add(sceneTile("Моя сцена", Actions.SCENE_MY));
+            tiles.add(sceneTile(getString(R.string.menu_my_scene), Actions.SCENE_MY));
         }
         String currentApp = MiKeyService.foregroundApp;
         boolean hasApp = currentApp != null && Apps.recent(this).contains(currentApp);
         if (Actions.tileVisible(this, "closeapp") && hasApp) {
-            Tile close = new Tile("Закрыть приложение");
+            Tile close = new Tile(getString(R.string.menu_close_app));
             close.bind(Apps.label(this, currentApp), TILE);
             close.view.setOnClickListener(v -> {
                 Apps.close(this, currentApp);
@@ -451,20 +456,20 @@ public class MenuActivity extends Activity {
             tiles.add(close);
         }
         if (Actions.tileVisible(this, "memory")) {
-            Tile memory = new Tile("Очистить память");
-            memory.bind("Свободно " + Apps.availMb(this) + " МБ", TILE);
+            Tile memory = new Tile(getString(R.string.menu_memory));
+            memory.bind(getString(R.string.menu_memory_free, Apps.availMb(this)), TILE);
             memory.view.setOnClickListener(v -> {
                 long before = Apps.availMb(this);
                 Apps.clearMemory(this);
-                memory.bind("Чистим...", TILE);
+                memory.bind(getString(R.string.menu_memory_cleaning), TILE);
                 // память освобождается не сразу
                 handler.postDelayed(() -> memory.bind(
-                        "Освобождено " + Math.max(Apps.availMb(this) - before, 0) + " МБ", TILE), 1500);
+                        getString(R.string.menu_memory_freed, Math.max(Apps.availMb(this) - before, 0)), TILE), 1500);
             });
             memory.view.setOnLongClickListener(v -> openSystem(Actions.action(Settings.ACTION_APPLICATION_SETTINGS)));
             tiles.add(memory);
         }
-        Tile settings = new Tile("Настройки");
+        Tile settings = new Tile(getString(R.string.menu_settings));
         settings.bind("", TILE);
         settings.view.setOnClickListener(v -> {
             startActivity(new Intent(this, SettingsActivity.class));
@@ -493,7 +498,7 @@ public class MenuActivity extends Activity {
         t.view.setOnClickListener(v -> {
             if (requireAccess()) {
                 Actions.applyScene(this, scene);
-                toast("Сцена " + title);
+                toast(getString(R.string.menu_scene_applied, title));
             }
         });
         t.view.setOnLongClickListener(v -> openSystem(
@@ -504,8 +509,7 @@ public class MenuActivity extends Activity {
 
     private void buildFooter() {
         TextView hint = new TextView(this);
-        hint.setText("Кнопка Xiaomi: " + Actions.singleLabel(this).toLowerCase()
-                + "\nДолгий ОК открывает настройки пункта, а на недавнем приложении закрывает его");
+        hint.setText(getString(R.string.menu_footer, Actions.singleLabel(this).toLowerCase()));
         hint.setTextColor(GRAY_TEXT);
         hint.setTextSize(13);
         hint.setPadding(dp(6), dp(16), 0, 0);
@@ -544,20 +548,20 @@ public class MenuActivity extends Activity {
     private void bindAll() {
         slider.setValue(Backlight.get(this));
         if (pictureTile != null) {
-            pictureTile.bind(TvSettings.label(TvSettings.PICTURE_VALUES, TvSettings.PICTURE_LABELS,
+            pictureTile.bind(TvSettings.label(this, TvSettings.PICTURE_VALUES, TvSettings.PICTURE_LABELS,
                     TvSettings.get(this, TvSettings.PICTURE_MODE, 7)), TILE);
         }
         if (soundTile != null) {
-            soundTile.bind(TvSettings.label(TvSettings.SOUND_VALUES, TvSettings.SOUND_LABELS,
+            soundTile.bind(TvSettings.label(this, TvSettings.SOUND_VALUES, TvSettings.SOUND_LABELS,
                     TvSettings.get(this, TvSettings.SOUND_STYLE, 0)), TILE);
         }
         if (nightTile != null) {
             boolean on = Actions.nightOn(this);
-            nightTile.bind(on ? "Вкл" : "Выкл", on ? ORANGE : TILE);
+            nightTile.bind(on ? getString(R.string.on) : getString(R.string.off), on ? ORANGE : TILE);
         }
         if (blueTile != null) {
             boolean on = TvSettings.get(this, TvSettings.BLUE_LIGHT, 0) != 0;
-            blueTile.bind(on ? "Вкл" : "Выкл", on ? ORANGE : TILE);
+            blueTile.bind(on ? getString(R.string.on) : getString(R.string.off), on ? ORANGE : TILE);
         }
         bindTimer();
         bindWifi();
@@ -569,7 +573,7 @@ public class MenuActivity extends Activity {
             return;
         }
         int left = SleepTimer.minutesLeft(this);
-        timerTile.bind(left == 0 ? "Выкл" : left + " мин", left == 0 ? TILE : ORANGE);
+        timerTile.bind(left == 0 ? getString(R.string.off) : getString(R.string.minutes, left), left == 0 ? TILE : ORANGE);
     }
 
     private void bindWifi() {
@@ -578,12 +582,12 @@ public class MenuActivity extends Activity {
         }
         WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         boolean on = wm != null && wm.isWifiEnabled();
-        String subtitle = "Выкл";
+        String subtitle = getString(R.string.off);
         if (on) {
             WifiInfo info = wm.getConnectionInfo();
             String ssid = info == null ? null : info.getSSID();
             if (ssid == null || ssid.contains("unknown ssid")) {
-                subtitle = info != null && info.getNetworkId() != -1 ? "Подключён" : "Не подключён";
+                subtitle = info != null && info.getNetworkId() != -1 ? getString(R.string.menu_wifi_connected) : getString(R.string.menu_wifi_disconnected);
             } else {
                 subtitle = ssid.replace("\"", "");
             }
@@ -604,7 +608,7 @@ public class MenuActivity extends Activity {
                 break;
             }
         }
-        vpnTile.bind(on ? "Подключено" : "Не подключено", on ? GREEN : TILE);
+        vpnTile.bind(on ? getString(R.string.menu_vpn_on) : getString(R.string.menu_vpn_off), on ? GREEN : TILE);
     }
 
     // --- действия ---
@@ -646,7 +650,7 @@ public class MenuActivity extends Activity {
             intent = getPackageManager().getLaunchIntentForPackage(AMNEZIA);
         }
         if (intent == null) {
-            toast("Amnezia VPN не установлен");
+            toast(getString(R.string.menu_vpn_missing));
             return;
         }
         startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -657,7 +661,7 @@ public class MenuActivity extends Activity {
         if (Actions.open(this, intents)) {
             finish();
         } else {
-            toast("На этом TV нет такого экрана настроек");
+            toast(getString(R.string.menu_no_screen));
         }
         return true;
     }
@@ -667,7 +671,7 @@ public class MenuActivity extends Activity {
         if (Backlight.canWrite(this)) {
             return true;
         }
-        toast("Нет доступа к настройкам TV, см. Настройки");
+        toast(getString(R.string.menu_no_access));
         return false;
     }
 

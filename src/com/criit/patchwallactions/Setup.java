@@ -84,8 +84,8 @@ final class Setup {
                 commands.run(adb);
             } catch (Exception e) {
                 error = LocalAdb.reachable()
-                        ? "TV не разрешил отладку. Повторите и нажмите Разрешить"
-                        : "Включите отладку по сети в настройках для разработчиков";
+                        ? ctx.getString(R.string.setup_denied)
+                        : ctx.getString(R.string.setup_no_debug);
             }
             String result = error;
             main.post(() -> callback.done(result));

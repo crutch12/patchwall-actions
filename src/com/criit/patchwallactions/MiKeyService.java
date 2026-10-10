@@ -3,6 +3,7 @@ package com.criit.patchwallactions;
 import android.Manifest;
 import android.accessibilityservice.AccessibilityService;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -84,6 +85,11 @@ public class MiKeyService extends AccessibilityService {
     private View dimView;
     private TextView sleepBanner;
     private ValueAnimator sleepFade;
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(Lang.wrap(base));
+    }
 
     @Override
     protected void onServiceConnected() {
@@ -320,7 +326,7 @@ public class MiKeyService extends AccessibilityService {
         WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         float d = getResources().getDisplayMetrics().density;
         sleepBanner = new TextView(this);
-        sleepBanner.setText("Сон через минуту. Нажмите кнопку Xiaomi, чтобы отложить на 15 минут");
+        sleepBanner.setText(Lang.wrap(getApplicationContext()).getString(R.string.sleep_warning));
         sleepBanner.setTextColor(Color.WHITE);
         sleepBanner.setTextSize(16);
         sleepBanner.setPadding((int) (24 * d), (int) (14 * d), (int) (24 * d), (int) (14 * d));

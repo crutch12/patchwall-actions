@@ -17,11 +17,12 @@ final class Actions {
     static final String HOLD_SOURCE = "source";
 
     static final String[] SINGLE_VALUES = {SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT, SINGLE_MENU};
-    static final String[] SINGLE_LABELS = {"Подсветка вкл/выкл", "Таймер сна +15 мин", "Сцена Ночь", "Открыть меню"};
+    static final int[] SINGLE_LABELS = {R.string.action_backlight, R.string.action_timer, R.string.action_night,
+            R.string.action_menu};
 
     static final String[] HOLD_VALUES = {HOLD_SOURCE, SINGLE_MENU, SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT};
-    static final String[] HOLD_LABELS = {"Переключить источник", "Открыть меню", "Подсветка вкл/выкл",
-            "Таймер сна +15 мин", "Сцена Ночь"};
+    static final int[] HOLD_LABELS = {R.string.action_source, R.string.action_menu, R.string.action_backlight,
+            R.string.action_timer, R.string.action_night};
 
     private static final int NIGHT_BACKLIGHT = 20;
     private static final int NIGHT_TIMER = 60;
@@ -41,10 +42,10 @@ final class Actions {
         String value = singlePress(ctx);
         for (int i = 0; i < SINGLE_VALUES.length; i++) {
             if (SINGLE_VALUES[i].equals(value)) {
-                return SINGLE_LABELS[i];
+                return ctx.getString(SINGLE_LABELS[i]);
             }
         }
-        return SINGLE_LABELS[0];
+        return ctx.getString(SINGLE_LABELS[0]);
     }
 
     static String hold(Context ctx) {

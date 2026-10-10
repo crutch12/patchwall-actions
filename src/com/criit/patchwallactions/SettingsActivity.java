@@ -3,6 +3,7 @@ package com.criit.patchwallactions;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
@@ -46,9 +47,10 @@ public class SettingsActivity extends Activity {
 
     private static final String[] TILE_IDS = {"media", "recent", "picture", "sound", "timer", "night", "cinema", "game",
             "myscene", "wifi", "vpn", "blue", "closeapp", "memory"};
-    private static final String[] TILE_LABELS = {"Сейчас играет", "Недавние приложения", "Картинка", "Звук",
-            "Таймер сна", "Ночь", "Кино", "Игра", "Моя сцена", "Wi-Fi", "Amnezia VPN", "Синий свет",
-            "Закрыть приложение", "Очистить память"};
+    private static final int[] TILE_LABELS = {R.string.settings_tile_media, R.string.settings_tile_recent,
+            R.string.menu_picture, R.string.menu_sound, R.string.menu_timer, R.string.menu_night, R.string.menu_cinema,
+            R.string.menu_game, R.string.menu_my_scene, R.string.wifi, R.string.menu_vpn, R.string.menu_blue,
+            R.string.menu_close_app, R.string.menu_memory};
 
     private float density;
     private LinearLayout nav;
@@ -60,6 +62,11 @@ public class SettingsActivity extends Activity {
     // группа, в которую сейчас добавляются строки
     private LinearLayout group;
     private TextView statusLine;
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(Lang.wrap(base));
+    }
 
     @Override
     protected void onCreate(Bundle state) {
@@ -80,6 +87,7 @@ public class SettingsActivity extends Activity {
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(24), dp(44), dp(56), dp(44));
 
+        buildLanguage();
         buildAccess();
         buildButton();
         buildBacklight();
@@ -111,48 +119,65 @@ public class SettingsActivity extends Activity {
             r.run();
         }
         boolean ready = setupReady();
-        statusLine.setText(ready ? "Всё настроено" : "Нужна настройка");
+        statusLine.setText(ready ? R.string.settings_ready : R.string.settings_not_ready);
         statusLine.setTextColor(ready ? OK : BAD);
     }
 
     // --- разделы ---
 
+    // язык первым: пока он не тот, остальное читать неудобно
+    private void buildLanguage() {
+        section(getString(R.string.settings_language));
+        startGroup();
+        String[] labels = {getString(R.string.settings_language_system), "English", "Русский"};
+        for (int i = 0; i < Lang.VALUES.length; i++) {
+            String value = Lang.VALUES[i];
+            Row row = row(labels[i]);
+            row.view.setOnClickListener(v -> {
+                if (!value.equals(Lang.get(this))) {
+                    Lang.set(this, value);
+                    recreate();
+                }
+            });
+            refreshers.add(() -> row.check(value.equals(Lang.get(this))));
+        }
+    }
+
     private void buildAccess() {
-        section("Настройка");
-        hint("При первой настройке TV спросит, разрешить ли отладку. Отметьте Всегда и нажмите Разрешить. "
-                + "После настройки приложение перезапустится само");
+        section(getString(R.string.settings_section_setup));
+        hint(getString(R.string.settings_setup_hint));
 
         startGroup();
-        Row setup = row("Настроить всё автоматически");
+        Row setup = row(getString(R.string.settings_setup_all));
         setup.chevron();
         setup.view.setOnClickListener(v -> {
-            setup.status("Ждём TV...", GRAY_TEXT);
+            setup.status(getString(R.string.settings_waiting), GRAY_TEXT);
             Setup.grantAll(this, error -> {
-                toast(error == null ? "Готово" : error);
+                toast(error == null ? getString(R.string.done) : error);
                 refreshAll();
             });
         });
-        refreshers.add(() -> setup.status(setupReady() ? "Готово" : "Запустить", setupReady() ? OK : BAD));
+        refreshers.add(() -> setup.status(setupReady() ? getString(R.string.done) : getString(R.string.settings_run), setupReady() ? OK : BAD));
 
         Row patchWall = row("PatchWall");
         patchWall.chevron();
         patchWall.view.setOnClickListener(v -> {
             boolean installed = MiKeyService.patchWallInstalled(this);
-            patchWall.status("Ждём TV...", GRAY_TEXT);
+            patchWall.status(getString(R.string.settings_waiting), GRAY_TEXT);
             Setup.setPatchWall(this, !installed, error -> {
-                toast(error == null ? (installed ? "PatchWall удалён, кнопка больше не мелькает" : "PatchWall возвращён") : error);
+                toast(error == null ? (installed ? getString(R.string.settings_patchwall_removed) : getString(R.string.settings_patchwall_restored)) : error);
                 refreshAll();
             });
         });
         refreshers.add(() -> {
             boolean installed = MiKeyService.patchWallInstalled(this);
-            patchWall.status(installed ? "Мелькает, удалить" : "Удалён, вернуть", installed ? BAD : OK);
+            patchWall.status(installed ? getString(R.string.settings_patchwall_flashes) : getString(R.string.settings_patchwall_gone), installed ? BAD : OK);
         });
 
-        Row debug = row("Отладка по сети");
+        Row debug = row(getString(R.string.settings_debug));
         debug.chevron();
         debug.view.setOnClickListener(v -> {
-            toast("Включите Отладку по USB и Отладку по сети, затем вернитесь сюда");
+            toast(getString(R.string.settings_debug_hint));
             Actions.open(this, Actions.action(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
                     Actions.action(Settings.ACTION_DEVICE_INFO_SETTINGS));
         });
@@ -160,55 +185,54 @@ public class SettingsActivity extends Activity {
             debug.status("...", GRAY_TEXT);
             new Thread(() -> {
                 boolean on = LocalAdb.reachable();
-                runOnUiThread(() -> debug.status(on ? "Вкл" : "Выкл", on ? OK : BAD));
+                runOnUiThread(() -> debug.status(on ? getString(R.string.on) : getString(R.string.off), on ? OK : BAD));
             }).start();
         });
 
-        caption("Доступы");
+        caption(getString(R.string.settings_access));
         startGroup();
-        Row service = row("Служба специальных возможностей");
+        Row service = row(getString(R.string.settings_service));
         service.view.setOnClickListener(v -> Actions.open(this, Actions.action(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
-        refreshers.add(() -> service.status(serviceEnabled() ? "Вкл" : "Выкл", serviceEnabled() ? OK : BAD));
+        refreshers.add(() -> service.status(serviceEnabled() ? getString(R.string.on) : getString(R.string.off), serviceEnabled() ? OK : BAD));
 
-        Row battery = row("Не выгружать из памяти");
+        Row battery = row(getString(R.string.settings_battery));
         battery.view.setOnClickListener(v -> Actions.open(this,
                 new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName())),
                 Actions.action(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)));
-        refreshers.add(() -> battery.status(ignoringBattery() ? "Да" : "Нет", ignoringBattery() ? OK : BAD));
+        refreshers.add(() -> battery.status(ignoringBattery() ? getString(R.string.yes) : getString(R.string.no), ignoringBattery() ? OK : BAD));
 
-        Row secure = row("Менять настройки TV");
+        Row secure = row(getString(R.string.settings_secure));
         refreshers.add(() -> grantedStatus(secure, Manifest.permission.WRITE_SECURE_SETTINGS));
 
-        Row logs = row("Видеть нажатия кнопки");
+        Row logs = row(getString(R.string.settings_logs));
         refreshers.add(() -> grantedStatus(logs, Manifest.permission.READ_LOGS));
 
-        Row location = row("Имя сети Wi-Fi");
+        Row location = row(getString(R.string.settings_wifi_name));
         location.view.setOnClickListener(v -> requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1));
         refreshers.add(() -> grantedStatus(location, Manifest.permission.ACCESS_FINE_LOCATION));
     }
 
     private void buildButton() {
-        section("Кнопка Xiaomi");
-        caption("Одно нажатие");
+        section(getString(R.string.settings_section_button));
+        caption(getString(R.string.settings_single));
         startGroup();
         for (int i = 0; i < Actions.SINGLE_VALUES.length; i++) {
-            choice(Actions.SINGLE_LABELS[i], Actions.SINGLE_VALUES[i], "single", Actions.SINGLE_BACKLIGHT);
+            choice(getString(Actions.SINGLE_LABELS[i]), Actions.SINGLE_VALUES[i], "single", Actions.SINGLE_BACKLIGHT);
         }
-        caption("Удержание");
+        caption(getString(R.string.settings_hold));
         startGroup();
         for (int i = 0; i < Actions.HOLD_VALUES.length; i++) {
-            choice(Actions.HOLD_LABELS[i], Actions.HOLD_VALUES[i], "hold", Actions.HOLD_SOURCE);
+            choice(getString(Actions.HOLD_LABELS[i]), Actions.HOLD_VALUES[i], "hold", Actions.HOLD_SOURCE);
         }
-        hint("Двойное нажатие всегда открывает меню, повторное нажатие закрывает его");
+        hint(getString(R.string.settings_double_hint));
     }
 
     private void buildBacklight() {
-        section("Подсветка");
-        hint("Одно нажатие кнопки переключает между этими уровнями. Ниже нуля подсветка выключена, "
-                + "а экран дополнительно затемняется. Стрелки меняют значение");
+        section(getString(R.string.settings_section_backlight));
+        hint(getString(R.string.settings_backlight_hint));
         startGroup();
-        Row low = row("Нижний уровень");
-        Row high = row("Верхний уровень");
+        Row low = row(getString(R.string.settings_low));
+        Row high = row(getString(R.string.settings_high));
         low.stepper();
         high.stepper();
         presetRow(low, true);
@@ -217,27 +241,27 @@ public class SettingsActivity extends Activity {
             int l = Backlight.low(this);
             int h = Backlight.high(this);
             low.status(l + "%", Color.WHITE);
-            high.status(h == Backlight.LAST ? "Последний" : h + "%", Color.WHITE);
+            high.status(h == Backlight.LAST ? getString(R.string.settings_last) : h + "%", Color.WHITE);
         });
     }
 
     private void buildMenu() {
-        section("Меню");
+        section(getString(R.string.settings_section_menu));
         startGroup();
-        Row scene = row("Сохранить текущее как мою сцену");
+        Row scene = row(getString(R.string.settings_save_scene));
         scene.chevron();
         scene.view.setOnClickListener(v -> {
             Actions.saveMyScene(this);
-            toast("Сцена сохранена: картинка, звук, яркость и синий свет");
+            toast(getString(R.string.settings_scene_saved_toast));
             refreshAll();
         });
-        refreshers.add(() -> scene.status(Actions.mySceneSaved(this) ? "Сохранена" : "", GRAY_TEXT));
+        refreshers.add(() -> scene.status(Actions.mySceneSaved(this) ? getString(R.string.settings_scene_saved) : "", GRAY_TEXT));
 
-        caption("Пункты меню");
+        caption(getString(R.string.settings_tiles));
         startGroup();
         for (int i = 0; i < TILE_IDS.length; i++) {
             String id = TILE_IDS[i];
-            Row row = row(TILE_LABELS[i]);
+            Row row = row(getString(TILE_LABELS[i]));
             row.view.setOnClickListener(v -> {
                 Actions.setTileVisible(this, id, !Actions.tileVisible(this, id));
                 refreshAll();
@@ -312,7 +336,7 @@ public class SettingsActivity extends Activity {
 
     private void grantedStatus(Row row, String permission) {
         boolean ok = granted(permission);
-        row.status(ok ? "Есть" : "Нет", ok ? OK : BAD);
+        row.status(ok ? getString(R.string.granted) : getString(R.string.no), ok ? OK : BAD);
     }
 
     private boolean serviceEnabled() {

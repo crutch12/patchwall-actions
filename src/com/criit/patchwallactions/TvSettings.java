@@ -13,9 +13,11 @@ final class TvSettings {
 
     // значения подобраны на MiTV-MOOQ1 по экрану настроек
     static final int[] PICTURE_VALUES = {7, 3, 2, 9};
-    static final String[] PICTURE_LABELS = {"Стандарт", "Яркий", "Спорт", "Кино"};
+    static final int[] PICTURE_LABELS = {R.string.mode_standard, R.string.mode_vivid, R.string.mode_sport,
+            R.string.mode_movie};
     static final int[] SOUND_VALUES = {0, 1, 2, 3};
-    static final String[] SOUND_LABELS = {"Стандарт", "Кино", "Новости", "Игра"};
+    static final int[] SOUND_LABELS = {R.string.mode_standard, R.string.mode_movie, R.string.mode_news,
+            R.string.mode_game};
 
     private TvSettings() {
     }
@@ -30,13 +32,13 @@ final class TvSettings {
         }
     }
 
-    static String label(int[] values, String[] labels, int value) {
+    static String label(Context ctx, int[] values, int[] labels, int value) {
         for (int i = 0; i < values.length; i++) {
             if (values[i] == value) {
-                return labels[i];
+                return ctx.getString(labels[i]);
             }
         }
-        return "Свой";
+        return ctx.getString(R.string.mode_custom);
     }
 
     // следующий режим по кругу, неизвестное значение начинает с первого

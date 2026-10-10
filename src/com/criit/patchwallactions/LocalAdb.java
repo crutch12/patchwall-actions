@@ -94,7 +94,7 @@ final class LocalAdb implements AutoCloseable {
                 }
             }
             if (m.command != CNXN) {
-                throw new IOException("adb не принял подключение");
+                throw new IOException("adb rejected the connection");
             }
             socket.setSoTimeout(30000);
             return adb;

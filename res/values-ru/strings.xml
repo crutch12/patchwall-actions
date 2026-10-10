@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_desc">Кнопка Xiaomi на пульте: одно нажатие, удержание и двойное нажатие выполняют действия из настроек приложения. Кнопки пульта не перехватываются</string>
+
+    <string name="wifi">Wi-Fi</string>
+    <string name="on">Вкл</string>
+    <string name="off">Выкл</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="granted">Есть</string>
+    <string name="done">Готово</string>
+    <string name="mb">%1$d МБ</string>
+    <string name="minutes">%1$d мин</string>
+
+    <string name="action_backlight">Подсветка вкл/выкл</string>
+    <string name="action_timer">Таймер сна +15 мин</string>
+    <string name="action_night">Сцена Ночь</string>
+    <string name="action_menu">Открыть меню</string>
+    <string name="action_source">Переключить источник</string>
+
+    <string name="mode_standard">Стандарт</string>
+    <string name="mode_vivid">Яркий</string>
+    <string name="mode_sport">Спорт</string>
+    <string name="mode_movie">Кино</string>
+    <string name="mode_news">Новости</string>
+    <string name="mode_game">Игра</string>
+    <string name="mode_custom">Свой</string>
+
+    <string name="menu_brightness">Яркость</string>
+    <string name="menu_source">Источник</string>
+    <string name="menu_home">Главный</string>
+    <string name="menu_no_signal">нет сигнала</string>
+    <string name="menu_no_signal_on">Нет сигнала на %1$s</string>
+    <string name="menu_now_playing">Сейчас играет: %1$s</string>
+    <string name="menu_prev">Назад</string>
+    <string name="menu_pause">Пауза</string>
+    <string name="menu_play">Играть</string>
+    <string name="menu_next">Вперёд</string>
+    <string name="menu_recent">Недавние</string>
+    <string name="menu_open">Открыто</string>
+    <string name="menu_closed">Закрыто</string>
+    <string name="menu_controls">Управление</string>
+    <string name="menu_picture">Картинка</string>
+    <string name="menu_sound">Звук</string>
+    <string name="menu_timer">Таймер сна</string>
+    <string name="menu_night">Ночь</string>
+    <string name="menu_blue">Синий свет</string>
+    <string name="menu_cinema">Кино</string>
+    <string name="menu_game">Игра</string>
+    <string name="menu_my_scene">Моя сцена</string>
+    <string name="menu_close_app">Закрыть приложение</string>
+    <string name="menu_memory">Очистить память</string>
+    <string name="menu_memory_free">Свободно %1$d МБ</string>
+    <string name="menu_memory_cleaning">Чистим...</string>
+    <string name="menu_memory_freed">Освобождено %1$d МБ</string>
+    <string name="menu_settings">Настройки</string>
+    <string name="menu_scene_applied">Сцена %1$s</string>
+    <string name="menu_footer">Кнопка Xiaomi: %1$s\nДолгий ОК открывает настройки пункта, а на недавнем приложении закрывает его</string>
+    <string name="menu_wifi_connected">Подключён</string>
+    <string name="menu_wifi_disconnected">Не подключён</string>
+    <string name="menu_vpn">Amnezia VPN</string>
+    <string name="menu_vpn_on">Подключено</string>
+    <string name="menu_vpn_off">Не подключено</string>
+    <string name="menu_vpn_missing">Amnezia VPN не установлен</string>
+    <string name="menu_no_screen">На этом TV нет такого экрана настроек</string>
+    <string name="menu_no_access">Нет доступа к настройкам TV, см. Настройки</string>
+
+    <string name="sleep_warning">Сон через минуту. Нажмите кнопку Xiaomi, чтобы отложить на 15 минут</string>
+
+    <string name="setup_denied">TV не разрешил отладку. Повторите и нажмите Разрешить</string>
+    <string name="setup_no_debug">Включите отладку по сети в настройках для разработчиков</string>
+
+    <string name="settings_ready">Всё настроено</string>
+    <string name="settings_not_ready">Нужна настройка</string>
+    <string name="settings_language">Язык / Language</string>
+    <string name="settings_language_system">Системный</string>
+    <string name="settings_section_setup">Настройка</string>
+    <string name="settings_setup_hint">При первой настройке TV спросит, разрешить ли отладку. Отметьте Всегда и нажмите Разрешить. После настройки приложение перезапустится само</string>
+    <string name="settings_setup_all">Настроить всё автоматически</string>
+    <string name="settings_waiting">Ждём TV...</string>
+    <string name="settings_run">Запустить</string>
+    <string name="settings_patchwall_removed">PatchWall удалён, кнопка больше не мелькает</string>
+    <string name="settings_patchwall_restored">PatchWall возвращён</string>
+    <string name="settings_patchwall_flashes">Мелькает, удалить</string>
+    <string name="settings_patchwall_gone">Удалён, вернуть</string>
+    <string name="settings_debug">Отладка по сети</string>
+    <string name="settings_debug_hint">Включите Отладку по USB и Отладку по сети, затем вернитесь сюда</string>
+    <string name="settings_access">Доступы</string>
+    <string name="settings_service">Служба специальных возможностей</string>
+    <string name="settings_battery">Не выгружать из памяти</string>
+    <string name="settings_secure">Менять настройки TV</string>
+    <string name="settings_logs">Видеть нажатия кнопки</string>
+    <string name="settings_wifi_name">Имя сети Wi-Fi</string>
+    <string name="settings_section_button">Кнопка Xiaomi</string>
+    <string name="settings_single">Одно нажатие</string>
+    <string name="settings_hold">Удержание</string>
+    <string name="settings_double_hint">Двойное нажатие всегда открывает меню, повторное нажатие закрывает его</string>
+    <string name="settings_section_backlight">Подсветка</string>
+    <string name="settings_backlight_hint">Одно нажатие кнопки переключает между этими уровнями. Ниже нуля подсветка выключена, а экран дополнительно затемняется. Стрелки меняют значение</string>
+    <string name="settings_low">Нижний уровень</string>
+    <string name="settings_high">Верхний уровень</string>
+    <string name="settings_last">Последний</string>
+    <string name="settings_section_menu">Меню</string>
+    <string name="settings_save_scene">Сохранить текущее как мою сцену</string>
+    <string name="settings_scene_saved_toast">Сцена сохранена: картинка, звук, яркость и синий свет</string>
+    <string name="settings_scene_saved">Сохранена</string>
+    <string name="settings_tiles">Пункты меню</string>
+    <string name="settings_tile_media">Сейчас играет</string>
+    <string name="settings_tile_recent">Недавние приложения</string>
+</resources>

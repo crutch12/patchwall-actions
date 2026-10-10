@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- английский по умолчанию: его система берёт, если язык TV не русский -->
+<resources>
+    <string name="a11y_desc">Xiaomi button on the remote: single press, hold and double press run actions from the app settings. Remote buttons are not intercepted</string>
+
+    <string name="wifi">Wi-Fi</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="granted">Granted</string>
+    <string name="done">Done</string>
+    <string name="mb">%1$d MB</string>
+    <string name="minutes">%1$d min</string>
+
+    <!-- действия кнопки -->
+    <string name="action_backlight">Backlight on/off</string>
+    <string name="action_timer">Sleep timer +15 min</string>
+    <string name="action_night">Night scene</string>
+    <string name="action_menu">Open menu</string>
+    <string name="action_source">Switch source</string>
+
+    <!-- режимы картинки и звука -->
+    <string name="mode_standard">Standard</string>
+    <string name="mode_vivid">Vivid</string>
+    <string name="mode_sport">Sport</string>
+    <string name="mode_movie">Movie</string>
+    <string name="mode_news">News</string>
+    <string name="mode_game">Game</string>
+    <string name="mode_custom">Custom</string>
+
+    <!-- меню -->
+    <string name="menu_brightness">Brightness</string>
+    <string name="menu_source">Source</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_no_signal">no signal</string>
+    <string name="menu_no_signal_on">No signal on %1$s</string>
+    <string name="menu_now_playing">Now playing: %1$s</string>
+    <string name="menu_prev">Previous</string>
+    <string name="menu_pause">Pause</string>
+    <string name="menu_play">Play</string>
+    <string name="menu_next">Next</string>
+    <string name="menu_recent">Recent</string>
+    <string name="menu_open">Open</string>
+    <string name="menu_closed">Closed</string>
+    <string name="menu_controls">Controls</string>
+    <string name="menu_picture">Picture</string>
+    <string name="menu_sound">Sound</string>
+    <string name="menu_timer">Sleep timer</string>
+    <string name="menu_night">Night</string>
+    <string name="menu_blue">Blue light</string>
+    <string name="menu_cinema">Cinema</string>
+    <string name="menu_game">Game</string>
+    <string name="menu_my_scene">My scene</string>
+    <string name="menu_close_app">Close app</string>
+    <string name="menu_memory">Free memory</string>
+    <string name="menu_memory_free">%1$d MB free</string>
+    <string name="menu_memory_cleaning">Cleaning...</string>
+    <string name="menu_memory_freed">%1$d MB freed</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_scene_applied">Scene: %1$s</string>
+    <string name="menu_footer">Xiaomi button: %1$s\nHold OK to open item settings, on a recent app it closes the app</string>
+    <string name="menu_wifi_connected">Connected</string>
+    <string name="menu_wifi_disconnected">Not connected</string>
+    <string name="menu_vpn">Amnezia VPN</string>
+    <string name="menu_vpn_on">Connected</string>
+    <string name="menu_vpn_off">Not connected</string>
+    <string name="menu_vpn_missing">Amnezia VPN is not installed</string>
+    <string name="menu_no_screen">This TV has no such settings screen</string>
+    <string name="menu_no_access">No access to TV settings, see Settings</string>
+
+    <string name="sleep_warning">Sleep in a minute. Press the Xiaomi button to snooze for 15 minutes</string>
+
+    <!-- настройка через adb -->
+    <string name="setup_denied">TV did not allow debugging. Try again and press Allow</string>
+    <string name="setup_no_debug">Turn on network debugging in developer options</string>
+
+    <!-- настройки -->
+    <string name="settings_ready">All set</string>
+    <string name="settings_not_ready">Setup needed</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_section_setup">Setup</string>
+    <string name="settings_setup_hint">On first setup the TV asks whether to allow debugging. Check Always and press Allow. The app restarts by itself after setup</string>
+    <string name="settings_setup_all">Set up everything</string>
+    <string name="settings_waiting">Waiting for TV...</string>
+    <string name="settings_run">Run</string>
+    <string name="settings_patchwall_removed">PatchWall removed, the button no longer flashes</string>
+    <string name="settings_patchwall_restored">PatchWall restored</string>
+    <string name="settings_patchwall_flashes">Flashes, remove</string>
+    <string name="settings_patchwall_gone">Removed, restore</string>
+    <string name="settings_debug">Network debugging</string>
+    <string name="settings_debug_hint">Turn on USB debugging and network debugging, then come back</string>
+    <string name="settings_access">Permissions</string>
+    <string name="settings_service">Accessibility service</string>
+    <string name="settings_battery">Keep in memory</string>
+    <string name="settings_secure">Change TV settings</string>
+    <string name="settings_logs">See button presses</string>
+    <string name="settings_wifi_name">Wi-Fi network name</string>
+    <string name="settings_section_button">Xiaomi button</string>
+    <string name="settings_single">Single press</string>
+    <string name="settings_hold">Hold</string>
+    <string name="settings_double_hint">Double press always opens the menu, pressing again closes it</string>
+    <string name="settings_section_backlight">Backlight</string>
+    <string name="settings_backlight_hint">A single press switches between these levels. Below zero the backlight is off and the screen is dimmed further. Arrows change the value</string>
+    <string name="settings_low">Low level</string>
+    <string name="settings_high">High level</string>
+    <string name="settings_last">Last</string>
+    <string name="settings_section_menu">Menu</string>
+    <string name="settings_save_scene">Save current as my scene</string>
+    <string name="settings_scene_saved_toast">Scene saved: picture, sound, brightness and blue light</string>
+    <string name="settings_scene_saved">Saved</string>
+    <string name="settings_tiles">Menu items</string>
+    <string name="settings_tile_media">Now playing</string>
+    <string name="settings_tile_recent">Recent apps</string>
+</resources>
