@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
@@ -15,9 +14,7 @@ import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
-import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
-import android.media.tv.TvInputManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -47,9 +44,7 @@ import java.util.List;
  */
 public class MenuActivity extends Activity {
 
-    private static final String TV_APP = "com.mediatek.wwtv.tvcenter";
     private static final String AMNEZIA = "org.amnezia.vpn";
-    private static final String HOME = "home";
 
     private static final int TILE = 0xF02C2C2E;
     private static final int BLUE = 0xFF2C5A8C;
@@ -71,7 +66,6 @@ public class MenuActivity extends Activity {
     static boolean resumed;
 
     private float density;
-    private SharedPreferences prefs;
     private LinearLayout panel;
     private BrightnessSlider slider;
     private final List<View> fadeOnPreview = new ArrayList<>();
@@ -118,7 +112,6 @@ public class MenuActivity extends Activity {
         // у прозрачной темы затемнение из стиля на этой прошивке не применяется
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         getWindow().setDimAmount(DIM);
-        prefs = getSharedPreferences("menu", MODE_PRIVATE);
 
         panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
@@ -213,30 +206,22 @@ public class MenuActivity extends Activity {
     }
 
     private void buildInputs() {
-        TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
-        List<TvInputInfo> hdmi = new ArrayList<>();
-        List<TvInputInfo> all = tim == null ? Collections.<TvInputInfo>emptyList() : tim.getTvInputList();
-        for (TvInputInfo info : all) {
-            if (info.getType() == TvInputInfo.TYPE_HDMI && info.getParentId() == null) {
-                hdmi.add(info);
-            }
-        }
+        List<TvInputInfo> hdmi = Inputs.hdmi(this);
         if (hdmi.isEmpty()) {
             return;
         }
-        Collections.sort(hdmi, (a, b) -> a.getId().compareTo(b.getId()));
 
         View label = caption("Источник");
         panel.addView(label);
         fadeOnPreview.add(label);
         LinearLayout row = row(dp(72));
-        String current = TV_APP.equals(MiKeyService.foregroundApp) ? prefs.getString("lastInput", HOME) : HOME;
+        String current = Inputs.current(this);
         List<View> cells = new ArrayList<>();
 
-        cells.add(inputTile(row, "Главный", HOME, current, true));
+        cells.add(inputTile(row, "Главный", Inputs.HOME, current, true));
         for (int i = 0; i < hdmi.size() && cells.size() < COLUMNS; i++) {
             String id = hdmi.get(i).getId();
-            boolean connected = tim.getInputState(id) == TvInputManager.INPUT_STATE_CONNECTED;
+            boolean connected = Inputs.connected(this, id);
             cells.add(inputTile(row, "HDMI " + (i + 1), id, current, connected));
         }
         for (int i = 0; i < cells.size(); i++) {
@@ -492,11 +477,7 @@ public class MenuActivity extends Activity {
     }
 
     private void switchInput(String id) {
-        prefs.edit().putString("lastInput", id).apply();
-        Intent intent = HOME.equals(id)
-                ? new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-                : new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(id));
-        startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        Inputs.switchTo(this, id);
         finish();
     }
 

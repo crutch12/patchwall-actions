@@ -60,10 +60,11 @@ public class SettingsActivity extends Activity {
         TextView title = text("PatchWall Actions", 26, Color.WHITE);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         list.addView(title);
-        list.addView(text("Пункт управления на кнопке Xiaomi. Двойное нажатие или удержание открывают меню", 14, GRAY_TEXT));
+        list.addView(text("Пункт управления на кнопке Xiaomi. Двойное нажатие открывает меню", 14, GRAY_TEXT));
 
         buildAccess();
         buildSinglePress();
+        buildHold();
         buildBacklightPreset();
         buildTiles();
 
@@ -107,7 +108,25 @@ public class SettingsActivity extends Activity {
                 row.status(chosen ? "●" : "○", chosen ? Color.WHITE : GRAY_TEXT);
             });
         }
-        list.addView(text("Двойное нажатие и удержание всегда открывают меню, повторное нажатие закрывает его", 13, GRAY_TEXT));
+        list.addView(text("Двойное нажатие всегда открывает меню, повторное нажатие закрывает его", 13, GRAY_TEXT));
+    }
+
+    // --- удержание ---
+
+    private void buildHold() {
+        list.addView(section("Удержание кнопки"));
+        for (int i = 0; i < Actions.HOLD_VALUES.length; i++) {
+            String value = Actions.HOLD_VALUES[i];
+            Row row = row(Actions.HOLD_LABELS[i]);
+            row.view.setOnClickListener(v -> {
+                Actions.prefs(this).edit().putString("hold", value).apply();
+                refreshAll();
+            });
+            refreshers.add(() -> {
+                boolean chosen = value.equals(Actions.hold(this));
+                row.status(chosen ? "●" : "○", chosen ? Color.WHITE : GRAY_TEXT);
+            });
+        }
     }
 
     // --- уровни подсветки для кнопки ---

@@ -14,8 +14,14 @@ final class Actions {
     static final String SINGLE_NIGHT = "night";
     static final String SINGLE_MENU = "menu";
 
+    static final String HOLD_SOURCE = "source";
+
     static final String[] SINGLE_VALUES = {SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT, SINGLE_MENU};
     static final String[] SINGLE_LABELS = {"Подсветка вкл/выкл", "Таймер сна +30 мин", "Сцена Ночь", "Открыть меню"};
+
+    static final String[] HOLD_VALUES = {HOLD_SOURCE, SINGLE_MENU, SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT};
+    static final String[] HOLD_LABELS = {"Переключить источник", "Открыть меню", "Подсветка вкл/выкл",
+            "Таймер сна +30 мин", "Сцена Ночь"};
 
     private static final int NIGHT_BACKLIGHT = 20;
     private static final int NIGHT_TIMER = 60;
@@ -41,9 +47,24 @@ final class Actions {
         return SINGLE_LABELS[0];
     }
 
+    static String hold(Context ctx) {
+        return prefs(ctx).getString("hold", HOLD_SOURCE);
+    }
+
     // возвращает true, если нужно открыть меню
     static boolean runSinglePress(Context ctx) {
-        switch (singlePress(ctx)) {
+        return run(ctx, singlePress(ctx));
+    }
+
+    static boolean runHold(Context ctx) {
+        return run(ctx, hold(ctx));
+    }
+
+    private static boolean run(Context ctx, String action) {
+        switch (action) {
+            case HOLD_SOURCE:
+                Inputs.cycle(ctx);
+                return false;
             case SINGLE_TIMER:
                 SleepTimer.add(ctx, 30);
                 return false;

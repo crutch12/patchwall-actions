@@ -20,7 +20,8 @@ import java.io.InputStreamReader;
  * - PatchWall, который всё равно всплывает, закрываем "назад", под ним остаётся то, что было.
  * Кнопки пульта не перехватываются, поэтому залипать нечему.
  *
- * Одно нажатие делает действие из настроек (по умолчанию подсветка), двойное или удержание открывают меню.
+ * Одно нажатие и удержание делают действия из настроек (по умолчанию подсветка и переключение
+ * источника), двойное открывает меню.
  */
 public class MiKeyService extends AccessibilityService {
 
@@ -123,7 +124,11 @@ public class MiKeyService extends AccessibilityService {
         }
         longPressed = true;
         cancelPending();
-        openMenu();
+        if (MenuActivity.current != null) {
+            MenuActivity.current.finish();
+        } else if (Actions.runHold(this)) {
+            openMenu();
+        }
     }
 
     private void onTap() {
