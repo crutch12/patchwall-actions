@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- баннер для лаунчера Android TV: четыре плитки и слайдер, как в самом меню -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#1C1C1E" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#D1D1D6" android:pathData="M90,40h90v24h-90z" />
+    <path android:fillColor="#3A3A3C" android:pathData="M180,40h50v24h-50z" />
+    <path android:fillColor="#2C5A8C" android:pathData="M90,76h30v30h-30z" />
+    <path android:fillColor="#2C2C2E" android:pathData="M130,76h30v30h-30z" />
+    <path android:fillColor="#2C2C2E" android:pathData="M170,76h30v30h-30z" />
+    <path android:fillColor="#2F6B47" android:pathData="M210,76h20v30h-20z" />
+    <path android:fillColor="#8A5A24" android:pathData="M90,116h30v24h-30z" />
+    <path android:fillColor="#2C2C2E" android:pathData="M130,116h100v24h-100z" />
+</vector>
