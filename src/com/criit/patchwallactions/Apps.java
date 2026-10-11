@@ -84,6 +84,20 @@ final class Apps {
         }
     }
 
+    // закрыть всё: текущее уводим на главный экран, потом закрываем все пользовательские приложения
+    static void closeAll(Context ctx) {
+        Context app = ctx.getApplicationContext();
+        app.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        String current = MiKeyService.foregroundApp;
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (current != null) {
+                kill(app, current);
+            }
+            clearMemory(app);
+        }, 700);
+    }
+
     // закрывает все фоновые пользовательские приложения. Память освобождается не сразу,
     // поэтому сколько освободилось, считает вызывающий через availMb чуть позже
     static void clearMemory(Context ctx) {

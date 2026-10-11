@@ -371,6 +371,18 @@ public class MenuActivity extends Activity {
         }
         grid.add(cells);
         grid.add(closeCells);
+
+        LinearLayout allRow = row(dp(44));
+        Tile all = new Tile(getString(R.string.menu_close_all));
+        all.title.setTextSize(14);
+        all.title.setGravity(Gravity.CENTER);
+        all.view.setGravity(Gravity.CENTER);
+        all.view.setOnClickListener(v -> {
+            Apps.closeAll(this);
+            finish();
+        });
+        addCell(allRow, all.view);
+        grid.add(Collections.singletonList(all.view));
     }
 
     private void buildControls() {

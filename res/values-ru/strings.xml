@@ -39,6 +39,7 @@
     <string name="menu_recent">Недавние</string>
     <string name="menu_open">Открыто</string>
     <string name="menu_close">Закрыть</string>
+    <string name="menu_close_all">Закрыть все приложения</string>
     <string name="menu_closed">Закрыто</string>
     <string name="menu_controls">Управление</string>
     <string name="menu_picture">Картинка</string>

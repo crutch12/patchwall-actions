@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- смена окон и пакет активного окна, без flagRequestFilterKeyEvents: пульт идёт мимо нас -->
+<!-- смена окон и пакет активного окна, без flagRequestFilterKeyEvents: пульт идёт мимо нас.
+     feedbackVisual, а не generic: со службой generic лаунчер считает, что включён экранный диктор,
+     и по ОК показывает меню действий вместо запуска приложения -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged"
-    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFeedbackType="feedbackVisual"
     android:notificationTimeout="0"
     android:canRetrieveWindowContent="true"
     android:description="@string/a11y_desc" />
