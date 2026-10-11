@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
 import android.media.tv.TvInputManager;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +53,11 @@ final class Inputs {
             if (connected(ctx, info.getId())) {
                 ids.add(info.getId());
             }
+        }
+        // без подключённых HDMI переключать некуда: говорим об этом, а не молча уходим на главный экран
+        if (ids.isEmpty()) {
+            Toast.makeText(ctx, Lang.wrap(ctx).getString(R.string.no_hdmi), Toast.LENGTH_SHORT).show();
+            return;
         }
         String current = current(ctx);
         int next = HOME.equals(current) ? 0 : ids.indexOf(current) + 1;

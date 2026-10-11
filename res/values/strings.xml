@@ -44,6 +44,7 @@
     <string name="menu_open">Open</string>
     <string name="menu_close">Close</string>
     <string name="menu_close_all">Close all apps</string>
+    <string name="no_hdmi">No HDMI devices connected</string>
     <string name="menu_closed">Closed</string>
     <string name="menu_controls">Controls</string>
     <string name="menu_picture">Picture</string>
