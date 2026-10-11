@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.widget.Toast;
 
 // действие одиночного нажатия, сцена Ночь и переход в системные настройки
 final class Actions {
@@ -16,13 +17,16 @@ final class Actions {
 
     static final String HOLD_SOURCE = "source";
 
-    static final String[] SINGLE_VALUES = {SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT, SINGLE_MENU};
-    static final int[] SINGLE_LABELS = {R.string.action_backlight, R.string.action_timer, R.string.action_night,
-            R.string.action_menu};
+    // ничего не делать: при нажатии только подсказка, где это настроить
+    static final String NONE = "none";
 
-    static final String[] HOLD_VALUES = {HOLD_SOURCE, SINGLE_MENU, SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT};
+    static final String[] SINGLE_VALUES = {SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT, SINGLE_MENU, NONE};
+    static final int[] SINGLE_LABELS = {R.string.action_backlight, R.string.action_timer, R.string.action_night,
+            R.string.action_menu, R.string.action_none};
+
+    static final String[] HOLD_VALUES = {HOLD_SOURCE, SINGLE_MENU, SINGLE_BACKLIGHT, SINGLE_TIMER, SINGLE_NIGHT, NONE};
     static final int[] HOLD_LABELS = {R.string.action_source, R.string.action_menu, R.string.action_backlight,
-            R.string.action_timer, R.string.action_night};
+            R.string.action_timer, R.string.action_night, R.string.action_none};
 
     private static final int NIGHT_BACKLIGHT = 20;
     private static final int NIGHT_TIMER = 60;
@@ -57,12 +61,23 @@ final class Actions {
         return run(ctx, singlePress(ctx));
     }
 
+    static String triple(Context ctx) {
+        return prefs(ctx).getString("triple", NONE);
+    }
+
+    static boolean runTriple(Context ctx) {
+        return run(ctx, triple(ctx));
+    }
+
     static boolean runHold(Context ctx) {
         return run(ctx, hold(ctx));
     }
 
     private static boolean run(Context ctx, String action) {
         switch (action) {
+            case NONE:
+                Toast.makeText(ctx, Lang.wrap(ctx).getString(R.string.action_unassigned), Toast.LENGTH_SHORT).show();
+                return false;
             case HOLD_SOURCE:
                 Inputs.cycle(ctx);
                 return false;

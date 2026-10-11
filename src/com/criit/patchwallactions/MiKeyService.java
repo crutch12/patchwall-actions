@@ -61,15 +61,12 @@ public class MiKeyService extends AccessibilityService {
     static long patchWallAt;
 
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final Runnable singlePress = () -> {
-        pending = false;
-        if (Actions.runSinglePress(this)) {
-            openMenu();
-        }
-    };
+    // нажатия копим, пока между ними меньше DOUBLE_PRESS_MS, потом решаем: одно, два или три
+    private final Runnable singlePress = this::resolveTaps;
     private final Runnable closePatchWall = this::closePatchWall;
     private final Runnable menuFallback = this::openRequestedMenu;
     private boolean pending;
+    private int taps;
     // на двойное нажатие меню открываем только после того, как убрали PatchWall,
     // иначе после "назад" система возвращает прошлое приложение, а не меню
     private boolean menuRequested;
@@ -209,23 +206,41 @@ public class MiKeyService extends AccessibilityService {
             MenuActivity.current.finish();
             return;
         }
-        if (pending) {
-            cancelPending();
-            if (!patchWallInstalled(this)) {
-                openMenu();
-                return;
+        taps++;
+        pending = true;
+        main.removeCallbacks(singlePress);
+        main.postDelayed(singlePress, DOUBLE_PRESS_MS);
+    }
+
+    private void resolveTaps() {
+        int count = taps;
+        pending = false;
+        taps = 0;
+        if (count >= 3) {
+            if (Actions.runTriple(this)) {
+                requestMenu();
             }
-            menuRequested = true;
-            patchWallClosed = false;
-            main.postDelayed(menuFallback, MENU_FALLBACK_MS);
+        } else if (count == 2) {
+            requestMenu();
+        } else if (Actions.runSinglePress(this)) {
+            requestMenu();
+        }
+    }
+
+    // если PatchWall ещё установлен, меню открываем только после того, как он закроется
+    private void requestMenu() {
+        if (!patchWallInstalled(this)) {
+            openMenu();
             return;
         }
-        pending = true;
-        main.postDelayed(singlePress, DOUBLE_PRESS_MS);
+        menuRequested = true;
+        patchWallClosed = false;
+        main.postDelayed(menuFallback, MENU_FALLBACK_MS);
     }
 
     private void cancelPending() {
         pending = false;
+        taps = 0;
         main.removeCallbacks(singlePress);
     }
 

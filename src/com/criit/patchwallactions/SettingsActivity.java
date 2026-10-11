@@ -225,6 +225,11 @@ public class SettingsActivity extends Activity {
         for (int i = 0; i < Actions.HOLD_VALUES.length; i++) {
             choice(getString(Actions.HOLD_LABELS[i]), Actions.HOLD_VALUES[i], "hold", Actions.HOLD_SOURCE);
         }
+        caption(getString(R.string.settings_triple));
+        startGroup();
+        for (int i = 0; i < Actions.HOLD_VALUES.length; i++) {
+            choice(getString(Actions.HOLD_LABELS[i]), Actions.HOLD_VALUES[i], "triple", Actions.NONE);
+        }
         hint(getString(R.string.settings_double_hint));
     }
 

@@ -18,6 +18,8 @@
     <string name="action_timer">Sleep timer +15 min</string>
     <string name="action_night">Night scene</string>
     <string name="action_menu">Open menu</string>
+    <string name="action_none">Nothing</string>
+    <string name="action_unassigned">Nothing is assigned to this press. Set it up in PatchWall Actions</string>
     <string name="action_source">Switch source</string>
 
     <!-- режимы картинки и звука -->
@@ -103,6 +105,7 @@
     <string name="settings_section_button">Xiaomi button</string>
     <string name="settings_single">Single press</string>
     <string name="settings_hold">Hold</string>
+    <string name="settings_triple">Triple press</string>
     <string name="settings_double_hint">Double press always opens the menu, pressing again closes it</string>
     <string name="settings_section_backlight">Backlight</string>
     <string name="settings_backlight_hint">A single press switches between these levels. Below zero the backlight is off and the screen is dimmed further. Arrows change the value</string>
