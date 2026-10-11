@@ -38,6 +38,7 @@
     <string name="menu_next">Вперёд</string>
     <string name="menu_recent">Недавние</string>
     <string name="menu_open">Открыто</string>
+    <string name="menu_close">Закрыть</string>
     <string name="menu_closed">Закрыто</string>
     <string name="menu_controls">Управление</string>
     <string name="menu_picture">Картинка</string>
@@ -55,7 +56,7 @@
     <string name="menu_memory_freed">Освобождено %1$d МБ</string>
     <string name="menu_settings">Настройки</string>
     <string name="menu_scene_applied">Сцена %1$s</string>
-    <string name="menu_footer">Кнопка Xiaomi: %1$s\nДолгий ОК открывает настройки пункта, а на недавнем приложении закрывает его</string>
+    <string name="menu_footer">Кнопка Xiaomi: %1$s\nДолгий ОК открывает настройки пункта</string>
     <string name="menu_wifi_connected">Подключён</string>
     <string name="menu_wifi_disconnected">Не подключён</string>
     <string name="menu_vpn">Amnezia VPN</string>

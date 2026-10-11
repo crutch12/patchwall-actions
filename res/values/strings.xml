@@ -42,6 +42,7 @@
     <string name="menu_next">Next</string>
     <string name="menu_recent">Recent</string>
     <string name="menu_open">Open</string>
+    <string name="menu_close">Close</string>
     <string name="menu_closed">Closed</string>
     <string name="menu_controls">Controls</string>
     <string name="menu_picture">Picture</string>
@@ -59,7 +60,7 @@
     <string name="menu_memory_freed">%1$d MB freed</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_scene_applied">Scene: %1$s</string>
-    <string name="menu_footer">Xiaomi button: %1$s\nHold OK to open item settings, on a recent app it closes the app</string>
+    <string name="menu_footer">Xiaomi button: %1$s\nHold OK to open item settings</string>
     <string name="menu_wifi_connected">Connected</string>
     <string name="menu_wifi_disconnected">Not connected</string>
     <string name="menu_vpn">Amnezia VPN</string>

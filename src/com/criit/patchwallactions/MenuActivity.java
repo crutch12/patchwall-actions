@@ -330,8 +330,11 @@ public class MenuActivity extends Activity {
         View label = caption(getString(R.string.menu_recent));
         panel.addView(label);
         fadeOnPreview.add(label);
+        // плитка открывает приложение, кнопка под ней закрывает
         LinearLayout row = row(dp(72));
+        LinearLayout closeRow = row(dp(44));
         List<View> cells = new ArrayList<>();
+        List<View> closeCells = new ArrayList<>();
         for (int i = 0; i < Math.min(COLUMNS, recent.size()); i++) {
             String pkg = recent.get(i);
             Tile t = new Tile(Apps.label(this, pkg));
@@ -341,7 +344,16 @@ public class MenuActivity extends Activity {
                 Apps.open(this, pkg);
                 finish();
             });
-            t.view.setOnLongClickListener(v -> {
+            t.view.setOnLongClickListener(v -> openSystem(
+                    new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg))));
+            addCell(row, t.view);
+            cells.add(t.view);
+
+            Tile close = new Tile(getString(R.string.menu_close));
+            close.title.setTextSize(14);
+            close.view.setGravity(Gravity.CENTER);
+            close.title.setGravity(Gravity.CENTER);
+            close.view.setOnClickListener(v -> {
                 boolean current = pkg.equals(MiKeyService.foregroundApp);
                 Apps.close(this, pkg);
                 if (current) {
@@ -349,15 +361,16 @@ public class MenuActivity extends Activity {
                 } else {
                     t.bind(getString(R.string.menu_closed), TILE);
                 }
-                return true;
             });
-            addCell(row, t.view);
-            cells.add(t.view);
+            addCell(closeRow, close.view);
+            closeCells.add(close.view);
         }
         for (int i = cells.size(); i < COLUMNS; i++) {
             addCell(row, new View(this));
+            addCell(closeRow, new View(this));
         }
         grid.add(cells);
+        grid.add(closeCells);
     }
 
     private void buildControls() {
