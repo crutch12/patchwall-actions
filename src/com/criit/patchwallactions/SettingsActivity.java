@@ -62,6 +62,7 @@ public class SettingsActivity extends Activity {
     // группа, в которую сейчас добавляются строки
     private LinearLayout group;
     private TextView statusLine;
+    private int currentSection;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -402,7 +403,19 @@ public class SettingsActivity extends Activity {
         group = null;
     }
 
+    // "назад" из пунктов справа возвращает к разделу слева, с раздела уже закрывает настройки
+    @Override
+    public void onBackPressed() {
+        View focused = getCurrentFocus();
+        if (focused != null && !navItems.contains(focused)) {
+            navItems.get(currentSection).requestFocus();
+            return;
+        }
+        super.onBackPressed();
+    }
+
     private void showSection(int index) {
+        currentSection = index;
         for (int i = 0; i < sections.size(); i++) {
             sections.get(i).setVisibility(i == index ? View.VISIBLE : View.GONE);
             navItems.get(i).setSelected(i == index);
