@@ -42,6 +42,8 @@ public class MiKeyService extends AccessibilityService {
     static final String PATCHWALL = "com.mitv.tvhome.atv";
     // pid в формате brief: "D/Tag(  881): ..."
     private static final Pattern PID = Pattern.compile("\\(\\s*(\\d+)\\)");
+    // сколько ждём старую строку, которую logcat -T 1 отдаёт сразу при старте
+    private static final long HISTORY_MS = 300;
     private static final long DOUBLE_PRESS_MS = 400;
     // если потеряли строку про отпускание, через столько считаем кнопку отпущенной
     private static final long STUCK_MS = 5000;
@@ -105,47 +107,34 @@ public class MiKeyService extends AccessibilityService {
     // --- журнал ---
 
     // журнал читаем только у system_server: logd фильтрует по pid сам, и TV не грузится разбором
-    // всего журнала. pid узнаём по первой же строке с нашими тегами, потом перезапускаем logcat
+    // всего журнала. pid берём из уже записанных строк системы, ждать нажатия для этого не нужно
     private void startReader() {
         Thread reader = new Thread(() -> {
             try {
-                String pid = null;
-                while (true) {
-                    List<String> args = new ArrayList<>(Arrays.asList("logcat", "-v", "brief", "-T", "1"));
-                    if (pid != null) {
-                        args.add("--pid=" + pid);
-                    }
-                    args.addAll(Arrays.asList("-s", "MiTVWindowPolicyInjector:D", "MiTVMiKeyHandler:D"));
-                    logcat = Runtime.getRuntime().exec(args.toArray(new String[0]));
-                    BufferedReader in = new BufferedReader(new InputStreamReader(logcat.getInputStream()));
-                    boolean first = true;
-                    String line;
-                    String found = null;
-                    while ((line = in.readLine()) != null) {
-                        if (pid == null) {
-                            Matcher m = PID.matcher(line);
-                            if (m.find()) {
-                                found = m.group(1);
-                                break;
-                            }
+                String pid = systemServerPid();
+                List<String> args = new ArrayList<>(Arrays.asList("logcat", "-v", "brief", "-T", "1"));
+                if (pid != null) {
+                    args.add("--pid=" + pid);
+                }
+                args.addAll(Arrays.asList("-s", "MiTVWindowPolicyInjector:D", "MiTVMiKeyHandler:D"));
+                logcat = Runtime.getRuntime().exec(args.toArray(new String[0]));
+                long startedAt = SystemClock.uptimeMillis();
+                BufferedReader in = new BufferedReader(new InputStreamReader(logcat.getInputStream()));
+                boolean first = true;
+                String line;
+                while ((line = in.readLine()) != null) {
+                    // -T 1 сразу отдаёт последнюю старую строку, если она есть. Живое нажатие так быстро не придёт
+                    if (first) {
+                        first = false;
+                        if (SystemClock.uptimeMillis() - startedAt < HISTORY_MS) {
                             continue;
                         }
-                        // первая строка от -T 1 это старое событие, его пропускаем
-                        if (first) {
-                            first = false;
-                            continue;
-                        }
-                        if (line.contains("handleAction192")) {
-                            main.post(this::onKeyLine);
-                        } else if (line.contains("onLongPress:192")) {
-                            main.post(this::onLongPress);
-                        }
                     }
-                    logcat.destroy();
-                    if (found == null) {
-                        return;
+                    if (line.contains("handleAction192")) {
+                        main.post(this::onKeyLine);
+                    } else if (line.contains("onLongPress:192")) {
+                        main.post(this::onLongPress);
                     }
-                    pid = found;
                 }
             } catch (Exception ignored) {
                 // без READ_LOGS или если процесс убили, просто перестаём слушать
@@ -153,6 +142,27 @@ public class MiKeyService extends AccessibilityService {
         }, "mikey-logcat");
         reader.setDaemon(true);
         reader.start();
+    }
+
+    // pid system_server по свежим строкам его тегов; null, если не нашли (тогда читаем без фильтра)
+    private static String systemServerPid() {
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"logcat", "-d", "-v", "brief", "-t", "300", "-s",
+                    "ActivityManager:*", "ActivityTaskManager:*", "MiTVWindowPolicyInjector:*", "WindowManager:*"});
+            BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            String pid = null;
+            while ((line = in.readLine()) != null) {
+                Matcher m = PID.matcher(line);
+                if (m.find()) {
+                    pid = m.group(1);
+                }
+            }
+            p.destroy();
+            return pid;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // строки идут парами: нажата, отпущена

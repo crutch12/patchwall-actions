@@ -521,7 +521,8 @@ public class SettingsActivity extends Activity {
 
             icon = new ImageView(SettingsActivity.this);
             icon.setDuplicateParentStateEnabled(true);
-            icon.setVisibility(View.GONE);
+            // место под значок держим всегда, чтобы значения стояли в одну колонку
+            icon.setVisibility(View.INVISIBLE);
             LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(22), dp(22));
             ilp.leftMargin = dp(10);
             view.addView(icon, ilp);
